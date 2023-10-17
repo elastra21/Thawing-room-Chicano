@@ -24,8 +24,10 @@ void Controller::init() {
 }
 
 void Controller::setUpLogger() {
-  WebSerial.begin(115200);
-  WebSerial.println("Logger set up");
+  #ifdef WebSerial
+    WebSerial.begin(115200);
+    WebSerial.println("Logger set up");
+  #endif
 }
 
 void Controller::setUpIOS() {

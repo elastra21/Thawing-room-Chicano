@@ -148,7 +148,7 @@ void setup() {
 
   wifi.setUpWiFi();
   wifi.setUpOTA();
-  wifi.setUpWebServer(false);
+  wifi.setUpWebServer(true);
   controller.setUpRTC();
 
   mqtt.connect();
@@ -165,7 +165,7 @@ void setup() {
 void loop() {
   DateTime now = controller.getDateTime();
 
-  if (!wifi.isConnected()) {
+  if (!wifi.isConnected() && mqtt.isServiceAvailable()) {
     wifi.reconnect();
     delay(500);
     return;
