@@ -79,7 +79,7 @@ void Controller::setUpRTC() {
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
   DateTime now = rtc.now();
-  if (now.year() <= 2000) {
+  if (true) {
     Serial.println("RTC time seems invalid. Adjusting to NTP time.");
     
     timeClient.begin();
@@ -121,9 +121,9 @@ void Controller::writeDigitalOutput(uint8_t output, uint8_t value) {
 
 float Controller::readTempFrom(uint8_t channel) {
   const uint16_t raw_voltage_ch = analogRead(channel); 
-  const float voltage_ch = (raw_voltage_ch * voltage_per_step);
+  // const float voltage_ch = (raw_voltage_ch * voltage_per_step);
   // Serial.println(voltage_ch);
-  const float temp = (voltage_ch * temperature_per_step) + TEMPERATURE_MIN;
-  
+  // const float temp = (voltage_ch * temperature_per_step) + TEMPERATURE_MIN;
+  const float temp = raw_voltage_ch*0.0247 - 52.933; // ramp calculated with excel trhough manual calibration
   return temp;
 }

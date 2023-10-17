@@ -38,12 +38,12 @@
 // ###################### Analog OUTPUTS #######################
 // Reserved for digital outputs
 
-#define AI_0         PORT_A1
-#define AI_1         PORT_C1
-#define AI_2         PORT_D1
-#define AI_3         PORT_D3
+#define AI_0         PORT_A0 //
+#define AI_1         PORT_A1 // Was causing problems
+#define AI_2         PORT_A2 //
+#define AI_3         PORT_A3 // 
 
-const uint8_t analog_inputs[] = {/* AI_0, */ AI_1 /*, AI_2, AI_3 */}; //PORT_A
+const uint8_t analog_inputs[] = {/* AI_0, */ AI_1 /*, AI_2, AI_3 */}; //PORT_A //NEVR USED
 
 const uint8_t analog_inputs_size = sizeof(analog_inputs)/sizeof(analog_inputs[0]);
 

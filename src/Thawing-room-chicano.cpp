@@ -51,6 +51,7 @@ bool stop_temp1 = 0, stop_temp2 = 0;
 
 // Fan F1 value (1 parameter)
 data_F1 F1_data;
+data_F2 F2_data;
 
 // Sprinkler S1 value (1 parameter)
 data_S1 S1_data;
@@ -70,6 +71,7 @@ bool C1_state = 0;   // State of Stage 1
 bool C2_state = 0;   // State of Stage 2
 bool C3_state = 0;   // State of Stage 3
 bool MTR_State = 0;  // State of the motor that control the Fan F1
+bool MTR2_State = 0; // State of the motor that control the Fan F2
 
 // State of the Stage (data = 1, 2 or 3)
 data_stage stage_data;
@@ -89,6 +91,7 @@ bool Stage3_started = 0;
 uint32_t F1_timer = 0UL;               // fan F1 timing
 uint32_t pid_computing_timer = 0UL;    // PID computing timing
 uint32_t F1_stg_2_timmer = 0UL;        // F1 stage 2 timing
+uint32_t F2_stg_2_timmer = 0UL;        // F2 stage 2 timing
 uint32_t S1_stg_2_timer = 0UL;         // S1 stage 2 timing
 uint32_t F1_stg_3_timer = 0UL;         // F1 stage 3 timing
 uint32_t S1_stg_3_timer = 0UL;         // S1 stage 3 timing
@@ -124,6 +127,7 @@ PID air_in_feed_PID(&PIDinput, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);  // DIRE
 void stopRoutine();
 void updateTemperature();
 void setStage(int Stage);
+void setUpDefaultParameters();
 String addressToString(uint8_t *address);
 int responseToInt(byte *value, size_t len);
 float responseToFloat(byte *value, size_t len);
@@ -131,6 +135,8 @@ void callback(char *topic, byte *payload, unsigned int len);  //callback functio
 
 void setup() {
   controller.init();
+  
+  setUpDefaultParameters();
 
   setStage(0);
 
@@ -198,18 +204,20 @@ void loop() {
 
   //---- Get surface temperature average with a FIFO buffer ---- //////////////////////////////// Something fuckin' wrong with the average
   if (millis() - ts_avg_timer >= AVG_RESOLUTION) {
-    const bool full_buffer = !(buffer_len < BUFFER_SIZE);
-    const uint8_t index = full_buffer ? buffer_index : buffer_len;
+    
+    if (buffer_len < BUFFER_SIZE) { //if buffer not full, we add the value
+        buffer_sum += TS_F;
+        buffer[buffer_len] = TS_F;
+        buffer_len++;
+      }
+      else { //buffer full, we remove the oldest value and add the new one
+        buffer_sum -= buffer[buffer_index];
+        buffer[buffer_index] = TS_F;
+        buffer_sum += TS_F;
+        buffer_index = (buffer_index + 1) % BUFFER_SIZE; // update the buffer index
+      }
 
-    buffer_sum += TS_F;
-    buffer[index] = TS_F;
-
-    if (full_buffer) {
-      buffer_sum -= buffer[index];
-      buffer_index = (index + 1) % BUFFER_SIZE;
-    } else buffer_len++;
-
-    avg_ts = buffer_sum / buffer_len;
+      avg_ts = buffer_sum/buffer_len;
 
     mqtt.publishData(AVG_TS_TOPIC, temp_data.AvgTs_N);
     // WebSerial.println("Temp data published");
@@ -232,9 +240,9 @@ void loop() {
     // for debug purpose
     WebSerial.println("Average: " + String(temp_data.AvgTs_N));
     // WebSerial.println(controller.readDigitalInput(DI0));
+    WebSerial.println("Ta: " + String(TA));
     WebSerial.println("Ts: " + String(TS));
     WebSerial.println("TC: " + String(TC));
-    WebSerial.println("Ta: " + String(TA));
     WebSerial.println(controller.readAnalogInput(TA_AI));
     WebSerial.println("Nstart: " + String(N_start));
     WebSerial.println("Nstop: " + String(N_stop));
@@ -282,22 +290,26 @@ void loop() {
     mqtt.publishData(ACK_A, N_SP.N_A);
     mqtt.publishData(ACK_B, N_SP.N_B);
 
+    // Ts & Tc
+    mqtt.publishData(ACK_TS, N_tset.N_ts_set);
+    mqtt.publishData(ACK_TC, N_tset.N_tc_set);
+
     A_B_timer = millis();
   }
 
   //---- PID Publishing ----//////////////////////////////////////////////////////////////////////
   // PID works only on STAGE 2
-  if (stage == 2 && STOP == 0) {
-    if (millis() - stg_2_pid_timer >= (TIME_ACQ_DELAY + 1)) {
-      WebSerial.println("Soft PID Actual Output is" + String(Output));
-      Output_float = float(coefOutput);
-      PID_data.PID_output = ((Output_float - 0) / (255 - 0)) * (100 - 0) + 0;
-      WebSerial.println("PID Output /100 is" + String(PID_data.PID_output));
 
-      mqtt.publishData(PID_OUTPUT, PID_data.PID_output);
-      stg_2_pid_timer = millis();
-    }
+  if (millis() - stg_2_pid_timer >= (TIME_ACQ_DELAY + 1)) {
+    WebSerial.println("Soft PID Actual Output is" + String(Output));
+    Output_float = float(coefOutput);
+    PID_data.PID_output = ((Output_float - 0) / (255 - 0)) * (100 - 0) + 0;
+    WebSerial.println("PID Output /100 is" + String(PID_data.PID_output));
+
+    mqtt.publishData(PID_OUTPUT, PID_data.PID_output);
+    stg_2_pid_timer = millis();
   }
+  
 
   //---- START, DELAYED, STOP Button pressed ----////////////////////////////////////////////////
   // delayed start push button or digital button pressed
@@ -306,10 +318,14 @@ void loop() {
     WebSerial.println("Delayed Start Pressed");
     N_d_start = 0;
     F1_data.M_F1 = 2;
+    F2_data.M_F2 = 0;
     S1_data.M_S1 = 2;
 
     mqtt.publishData(m_F1, F1_data.M_F1);
     WebSerial.println("Stage 1 init M_F1 stop published ");
+
+    mqtt.publishData(m_F2, F2_data.M_F2);
+    WebSerial.println("Stage 1 init M_F2 stop published ");
 
     mqtt.publishData(m_S1, S1_data.M_S1);
     WebSerial.println("Stage 1 init M_S1 stop published");
@@ -321,10 +337,14 @@ void loop() {
     WebSerial.println("Start Pressed");
     N_start = 0;
     F1_data.M_F1 = 2;
+    F2_data.M_F2 = 0;
     S1_data.M_S1 = 2;
 
     mqtt.publishData(m_F1, F1_data.M_F1);
     WebSerial.println("Stage 1 init M_F1 stop published ");
+
+    mqtt.publishData(m_F2, F2_data.M_F2);
+    WebSerial.println("Stage 1 init M_F2 stop published ");
 
     mqtt.publishData(m_S1, S1_data.M_S1);
     WebSerial.println("Stage 1 init M_S1 stop published");
@@ -347,18 +367,23 @@ void loop() {
         || START2 == 1)
        && Stage2_started == 0 && Stage2_RTC_set == 0)) {
 
-    START1 = MTR_State = C1_state = 0;
+    START1 = MTR_State = MTR2_State = C1_state = 0;
     controller.writeDigitalOutput(STAGE_1_IO, LOW);
     controller.writeDigitalOutput(STAGE_2_IO, LOW);
     controller.writeDigitalOutput(STAGE_3_IO, LOW);
     controller.writeDigitalOutput(VALVE_IO, LOW);
     controller.writeDigitalOutput(FAN_IO, LOW);
+    controller.writeDigitalOutput(FAN2_IO, LOW);
 
     F1_data.M_F1 = 2;
+    F2_data.M_F2 = 0;
     S1_data.M_S1 = 2;
 
     mqtt.publishData(m_F1, F1_data.M_F1);
     WebSerial.println("All M_F1 stop published ");
+
+    mqtt.publishData(m_F2, F2_data.M_F2);
+    WebSerial.println("ALL M_F2 init M_F2 stop published ");
 
     mqtt.publishData(m_S1, S1_data.M_S1);
     WebSerial.println("All M_S1 stop published");
@@ -480,27 +505,49 @@ void loop() {
     }
 
     // Activate the PID when F1 ON
-    if (MTR_State == 1 && (millis() - turn_on_pid_timer >= 3000)) {
-      PIDinput = TA_F;
-      coefOutput = (coefPID * Output) / 100;  // Transform the Output of the PID to the desired max value
-      WebSerial.println(coefOutput);
-      air_in_feed_PID.Compute();
-      controller.writeAnalogOutput(AIR_PWM, Output);
-      Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
-      WebSerial.println("Converted_Output is " + String(Converted_Output));
-      turn_on_pid_timer = millis();
+    // if (MTR_State == 1 && (millis() - turn_on_pid_timer >= 3000)) {
+    //   PIDinput = TA_F;
+    //   coefOutput = (coefPID * Output) / 100;  // Transform the Output of the PID to the desired max value
+    //   WebSerial.println(coefOutput);
+    //   air_in_feed_PID.Compute();
+    //   controller.writeAnalogOutput(AIR_PWM, Output);
+    //   Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
+    //   WebSerial.println("Converted_Output is " + String(Converted_Output));
+    //   turn_on_pid_timer = millis();
+    // }
+
+    // // Put the PID at 0 when F1 OFF
+    // if (MTR_State == 0 && (millis() - turn_on_pid_timer >= 3000)) {
+    //   //Setpoint = 0;
+    //   PIDinput = 0;
+    //   Output = 0;
+    //   coefOutput = 0;
+    //   controller.writeAnalogOutput(AIR_PWM, Output);
+    //   Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
+    //   WebSerial.println("Converted_Output is " + String(Converted_Output));
+    //   turn_off_pid_timer = millis();
+    // }
+
+    if ((MTR_State == 1 && MTR2_State == 0 && temp_data.Ta_N < (Setpoint - 2)) && (millis() - F2_stg_2_timmer >= 3000)){
+      controller.writeDigitalOutput(FAN2_IO, HIGH);
+      WebSerial.println("Stage 2 F2 ON");
+      MTR2_State = 1;
+      F2_data.M_F2 = 1;  // When M_F1 = 2 ==> OFF
+
+      mqtt.publishData(m_F2, F2_data.M_F2);
+      WebSerial.println("stg2 F2 on published ");
+      F2_stg_2_timmer = millis();
     }
 
-    // Put the PID at 0 when F1 OFF
-    if (MTR_State == 0 && (millis() - turn_on_pid_timer >= 3000)) {
-      //Setpoint = 0;
-      PIDinput = 0;
-      Output = 0;
-      coefOutput = 0;
-      controller.writeAnalogOutput(AIR_PWM, Output);
-      Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
-      WebSerial.println("Converted_Output is " + String(Converted_Output));
-      turn_off_pid_timer = millis();
+    if ((MTR2_State == 1 && temp_data.Ta_N > (Setpoint + 2)) || (MTR_State == 0 && (millis() - F2_stg_2_timmer >= 3000))){
+      controller.writeDigitalOutput(FAN2_IO, LOW);
+      WebSerial.println("Stage 2 F2 OFF");
+      MTR2_State = 0;
+      F2_data.M_F2 = 0;  // When M_F1 = 2 ==> OFF
+
+      mqtt.publishData(m_F2, F2_data.M_F2);
+      WebSerial.println("stg2 F2 OFF published ");
+      F2_stg_2_timmer = millis();
     }
   }
 
@@ -516,13 +563,19 @@ void loop() {
     controller.writeDigitalOutput(STAGE_3_IO, LOW);
     controller.writeDigitalOutput(VALVE_IO, LOW);
     controller.writeDigitalOutput(FAN_IO, LOW);
+    controller.writeDigitalOutput(FAN2_IO, LOW);
+
     Output = 0;
     coefOutput = 0;
 
     F1_data.M_F1 = 2;  // When M_F1 = 2 ==> OFF
+    F2_data.M_F2 = 0; // // When M_F2 = 0 ==> OFF
 
     mqtt.publishData(m_F1, F1_data.M_F1);
     WebSerial.println("stage 3 F1 init published ");
+
+    mqtt.publishData(m_F2, F2_data.M_F2);
+    WebSerial.println("Stage 3 M_F2 init published ");
 
     S1_data.M_S1 = 2;  // When M_S1 = 2 ==> OFF
 
@@ -765,6 +818,7 @@ void stopRoutine() {
     controller.writeDigitalOutput(STAGE_3_IO, LOW);
     controller.writeDigitalOutput(VALVE_IO, LOW);
     controller.writeDigitalOutput(FAN_IO, LOW);
+    controller.writeDigitalOutput(FAN2_IO, LOW);
     controller.writeAnalogOutput(AIR_PWM, 0);
 
     stage = 0;
@@ -773,15 +827,17 @@ void stopRoutine() {
     stop_temp1 = 1;
 
     F1_data.M_F1 = S1_data.M_S1 = 2;
+    F2_data.M_F2 = 0;
 
     mqtt.publishData(m_F1, F1_data.M_F1);
+    mqtt.publishData(m_F2, F2_data.M_F2);
     mqtt.publishData(m_S1, S1_data.M_S1);
     setStage(0);
     WebSerial.println("Stage 0 Status Send packet ");
   }
 
   if (stop_temp2 == 0) {
-    MTR_State = C1_state = C2_state = C3_state = S1_state = START1 = START2 = Stage2_started = Stage3_started = Stage2_RTC_set = 0;
+    MTR_State = MTR2_State = C2_state = C3_state = S1_state = START1 = START2 = Stage2_started = Stage3_started = Stage2_RTC_set = 0;
     stop_temp2 = 1;
   }
 
@@ -793,12 +849,12 @@ void stopRoutine() {
 
 void updateTemperature() {
   TA = controller.readTempFrom(TA_AI);
-  // TS = controller.readTempFrom(TS_AI);
-  // TC = controller.readTempFrom(TC_AI);
+  TS = controller.readTempFrom(TS_AI);
+  TC = controller.readTempFrom(TC_AI);
 
   // TA = 0;
-  TS = 0;
-  TC = 0;
+  // TS = 0; // was desactivated
+  // TC = 0;
 }
 
 String addressToString(uint8_t *address) {
@@ -826,6 +882,28 @@ int responseToInt(byte *value, size_t len) {
   String puta_mierda_mal_parida;
   for (int i = 0; i < len; i++) puta_mierda_mal_parida += (char)value[i];
   return puta_mierda_mal_parida.toInt();
+}
+
+void setUpDefaultParameters(){
+  // Default parameters
+  N_st1.N_f1_st1_ontime = 1;
+  N_st1.N_f1_st1_offtime = 1;
+
+  N_st2.N_f1_st2_ontime = 1;
+  N_st2.N_f1_st2_offtime = 1;
+  N_st2.N_s1_st2_ontime = 0.5;
+  N_st2.N_s1_st2_offtime = 1;
+
+  N_st3.N_f1_st3_ontime = 10;
+  N_st3.N_f1_st3_offtime = 30;
+  N_st3.N_s1_st3_ontime = 1;
+  N_st3.N_s1_st3_offtime = 15;
+
+  N_SP.N_A = 0.5;
+  N_SP.N_B = 20;
+
+  N_tset.N_ts_set = 4;
+  N_tset.N_tc_set = 2;
 }
 
 // float getIRTemp() {

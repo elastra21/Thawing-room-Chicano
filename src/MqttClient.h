@@ -37,6 +37,7 @@
 
 //------------ publish index    -------------------------------------------------------------------->
 #define m_F1                "mduino/M_F1"
+#define m_F2                "mduino/M_F2"
 #define m_S1                "mduino/M_S1"
 #define STAGE               "mduino/stage"
 #define AVG_TS_TOPIC        "mduino/AvgTs"
@@ -58,6 +59,8 @@
 #define ACK_S1_ST3_OFFTIME  "mduino/ack_s1_st3_offtime"
 #define ACK_A               "mduino/ack_A"
 #define ACK_B               "mduino/ack_B"
+#define ACK_TS              "mduino/ack_Ts"
+#define ACK_TC              "mduino/ack_Tc"
 
 
 
