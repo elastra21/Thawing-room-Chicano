@@ -69,7 +69,7 @@ const uint8_t outputs_size = sizeof(outputs)/sizeof(outputs[0]);
 // #################### PINS PULLED UP ON START ####################
 // This pins need to be set as LOW on start.
 
-const uint8_t pulled_up[] = {12, 20}; //PORT_B
+const uint8_t pulled_up[] = {33,12}; //PORT_B
 
 const uint8_t pulled_up_size = sizeof(pulled_up)/sizeof(pulled_up[0]);
 

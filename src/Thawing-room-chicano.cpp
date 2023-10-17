@@ -141,8 +141,10 @@ void setup() {
   setStage(0);
 
   // Using FREE pins as digital outputs
-  pinMode(FAN_IO, OUTPUT);
-  controller.writeDigitalOutput(FAN_IO, LOW);
+  // pinMode(FAN_IO, OUTPUT);
+  // controller.writeDigitalOutput(FAN_IO, LOW);
+  // pinMode(FAN2_IO, OUTPUT);
+  // controller.writeDigitalOutput(FAN2_IO, LOW);
 
   wifi.setUpWiFi();
   wifi.setUpOTA();
