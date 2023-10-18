@@ -1,15 +1,12 @@
-// adding analog read with SGM58031
-
 #include <Wire.h>
 #include "hardware/WIFI.h"
-#include "config.h"
+#include "hardware/config.h"
 #include <PID_v1.h>
-// #include <OneWire.h>
 #include "secrets.h"
 #include <Arduino.h>
 #include "MqttClient.h"
-#include <DallasTemperature.h>
 #include "hardware/Controller.h"
+#include "Thawing-room-chicano.h"
 
 data_rtc N_rtc;  // structure data_rtc from the config file is renamed N_rtc
 data_st1 N_st1;  // fan (F1) STAGE 1 on and off time
@@ -121,16 +118,6 @@ Controller controller;
 
 PID air_in_feed_PID(&PIDinput, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);  // DIRECT or REVERSE
 
-//---- Function declaration ----/////////////////////////////////////////////////////////////////////////////
-// float getIRTemp();
-void stopRoutine();
-void updateTemperature();
-void setStage(int Stage);
-void setUpDefaultParameters();
-String addressToString(uint8_t *address);
-int responseToInt(byte *value, size_t len);
-float responseToFloat(byte *value, size_t len);
-void callback(char *topic, byte *payload, unsigned int len);  //callback function for mqtt, see definition after loop
 
 void setup() {
   controller.init();
@@ -160,6 +147,12 @@ void setup() {
 }
 
 void loop() {
+  // if is for testing porpuse comment this "if" and replace DateTime "now" for: DateTime now(__DATE__, __TIME__); 
+  if (!controller.isRTCConnected()) {  
+    WebSerial.println("RTC not connected"); 
+    while (true) delay(1000);
+  }
+
   DateTime now = controller.getDateTime();
 
   if (!controller.isWiFiConnected() && mqtt.isServiceAvailable()) {
@@ -186,16 +179,16 @@ void loop() {
 
   if ((millis() - address_sending_timer >= 10000)) {
 
-    String ta_string_address = addressToString(ADDRESS_TA);
+    String ta_string_address = addressToString(controller.ADDRESS_TA);
     mqtt.publishData("mduino/sendadd1", ta_string_address);
 
-    String ts_string_address = addressToString(ADDRESS_TS);
+    String ts_string_address = addressToString(controller.ADDRESS_TS);
     mqtt.publishData("mduino/sendadd2", ts_string_address);
 
-    String tc_string_address = addressToString(ADDRESS_TC);
+    String tc_string_address = addressToString(controller.ADDRESS_TC);
     mqtt.publishData("mduino/sendadd3", tc_string_address);
 
-    String ti_string_address = addressToString(ADDRESS_TI);
+    String ti_string_address = addressToString(controller.ADDRESS_TI);
     mqtt.publishData("mduino/sendadd4", ti_string_address);
 
     address_sending_timer = millis();
@@ -855,6 +848,8 @@ void updateTemperature() {
   // TS = 0; // was desactivated
   // TC = 0;
 }
+
+// THIS SHOULD BE ALSO IN THE CONTROLLER
 
 String addressToString(uint8_t *address) {
   String formated_address;

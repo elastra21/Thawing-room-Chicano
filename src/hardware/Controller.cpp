@@ -65,7 +65,6 @@ void Controller::setUpAnalogInputs() {
 }
 
 void Controller::setUpI2C() {
-  ;
   while (!rtc_i2c.begin(I2C_SDA, I2C_SCL)){
     WebSerial.println("RTC I2C not found");
     delay(1000);
@@ -99,6 +98,10 @@ void Controller::setUpRTC() {
     // Adjust RTC
     rtc.adjust(ntpTime);
   }
+}
+
+bool Controller::isRTCConnected() {
+  return rtc.begin(&rtc_i2c);
 }
 
 DateTime Controller::getDateTime() {
