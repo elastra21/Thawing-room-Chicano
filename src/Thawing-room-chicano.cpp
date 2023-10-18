@@ -1,15 +1,15 @@
 // adding analog read with SGM58031
 
 #include <Wire.h>
-#include "WIFI.h"
+#include "hardware/WIFI.h"
 #include "config.h"
 #include <PID_v1.h>
 // #include <OneWire.h>
 #include "secrets.h"
 #include <Arduino.h>
-#include "Controller.h"
 #include "MqttClient.h"
 #include <DallasTemperature.h>
+#include "hardware/Controller.h"
 
 data_rtc N_rtc;  // structure data_rtc from the config file is renamed N_rtc
 data_st1 N_st1;  // fan (F1) STAGE 1 on and off time
@@ -116,7 +116,6 @@ float buffer[BUFFER_SIZE] = {};  // buffer to store the values
 uint8_t buffer_len = 0;
 uint8_t buffer_index = 0;  // buffer index
 
-WIFI wifi;
 MqttClient mqtt;
 Controller controller;
 
@@ -145,13 +144,11 @@ void setup() {
   // controller.writeDigitalOutput(FAN_IO, LOW);
   // pinMode(FAN2_IO, OUTPUT);
   // controller.writeDigitalOutput(FAN2_IO, LOW);
-
-  wifi.setUpWiFi();
-  wifi.setUpOTA();
-  wifi.setUpWebServer(true);
+  controller.setUpWiFi(SECRET_SSID, SECRET_PASS,HOST_NAME);
+  controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
   controller.setUpRTC();
 
-  mqtt.connect();
+  mqtt.connect(IP_ADDRESS, PORT, USERNAME);
   mqtt.setCallback(callback);
 
   //Turn the PID on
@@ -165,13 +162,13 @@ void setup() {
 void loop() {
   DateTime now = controller.getDateTime();
 
-  if (!wifi.isConnected() && mqtt.isServiceAvailable()) {
-    wifi.reconnect();
+  if (!controller.isWiFiConnected() && mqtt.isServiceAvailable()) {
+    controller.reconnectWiFi();
     delay(500);
     return;
   }
 
-  wifi.loopOTA();
+  controller.loopOTA();
   
   if (mqtt.isServiceAvailable()) mqtt.loop();
 

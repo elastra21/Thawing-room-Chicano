@@ -67,7 +67,7 @@
 class MqttClient {
   public:
     void loop();
-    void connect();
+    void connect(const char *domain, uint16_t port, const char *username);
     void reconnect();
     bool isConnected();
     void subscribeRoutine();
@@ -78,6 +78,7 @@ class MqttClient {
     void publishData(String topic, String value);
     void setCallback(std::function<void (char *, uint8_t *, unsigned int)> callback);
   private:
+    char mqtt_username[32];  
     bool no_service_available = true;
     bool last_connection_state = false;
 

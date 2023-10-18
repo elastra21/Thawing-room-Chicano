@@ -9,7 +9,7 @@
 #include <Arduino.h>
 #include <NTPClient.h>
 
-// #define LOGGER Serial
+#define WebSerial Serial
 
 #define AIR_PWM     7
 #define FREQ        5000
@@ -28,6 +28,10 @@
 
 class Controller {
 private:
+    WIFI wifi;
+    // Pinout pinout;
+    // Logger logger;
+
     void setUpI2C();
     void setUpIOS();
     void setUpLogger();
@@ -47,8 +51,15 @@ public:
     void setUpRTC();
     DateTime getDateTime();
     float readTempFrom(uint8_t channel);
-    
-
+    // WIFI CLASS
+    void loopOTA();
+    void reconnectWiFi();
+    bool isWiFiConnected();
+    bool refreshWiFiStatus();
+    bool getConnectionStatus();
+    // Puto el que lo lea
+    void connectToWiFi(bool web_server, bool web_serial, bool OTA); 
+    void setUpWiFi(const char* ssid, const char* password, const char* hostname);
 
 };
 

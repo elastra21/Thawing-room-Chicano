@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 #include <Arduino.h>
-#include "WS_V2.h"
+#include "hardware/WS_V2.h"
 #include <DallasTemperature.h>
 
 // #define TIME_ZONE_OFFSET_HRS            (-7)  /* Ensenada, México */

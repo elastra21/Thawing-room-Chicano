@@ -129,3 +129,35 @@ float Controller::readTempFrom(uint8_t channel) {
   const float temp = raw_voltage_ch*0.0247 - 52.933; // ramp calculated with excel trhough manual calibration
   return temp;
 }
+
+// WIFI CLASS
+
+void Controller::connectToWiFi(bool web_server, bool web_serial, bool OTA) {
+  wifi.connectToWiFi();
+  if(OTA) wifi.setUpOTA();
+  if(web_server) wifi.setUpWebServer(web_serial);
+}
+
+void Controller::reconnectWiFi() {
+  wifi.reconnect();
+}
+
+bool Controller::isWiFiConnected() {
+  return wifi.isConnected();
+}
+
+bool Controller::refreshWiFiStatus() {
+  return wifi.refreshWiFiStatus();
+}
+
+bool Controller::getConnectionStatus() {
+  return wifi.getConnectionStatus();
+}
+
+void Controller::loopOTA() {
+  wifi.loopOTA();
+}
+
+void Controller::setUpWiFi(const char* ssid, const char* password, const char* hostname) {
+  wifi.init(ssid, password, hostname);
+}

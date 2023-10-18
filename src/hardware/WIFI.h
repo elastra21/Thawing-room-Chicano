@@ -1,13 +1,10 @@
 #ifndef MY_WIFI_H
 #define MY_WIFI_H
-// #include "Arduino.h"
 #include "EEPROM.h"
 #include "SPIFFS.h"
 #include <Update.h>
-#include "secrets.h"
 #include <ESPmDNS.h>
 #include <AsyncTCP.h>
-// #include <WiFiUdp.h>
 #include <WiFiMulti.h>
 #include <WiFiClient.h>
 #include <ArduinoOTA.h>
@@ -20,16 +17,19 @@
 
 class WIFI {
   public:
-    void localIP();
+    void init(const char* ssid, const char* password, const char* hostname);
     void loopOTA();
     void setUpOTA();
-    void setUpWiFi();
     void reconnect();
     bool isConnected();
+    void connectToWiFi();
     bool refreshWiFiStatus();
     bool getConnectionStatus();
     void setUpWebServer(bool brigeSerial = false);
   private:
+    char ssid[32];  
+    char password[64];
+    char hostname[32];  
     bool last_connection_state = false;
 };
 #endif
