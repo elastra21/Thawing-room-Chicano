@@ -11,7 +11,7 @@ const double temperature_per_step = range / REFERENCE;
 
 Controller::Controller(/* args */) {
   setUpLogger();
-  WebSerial.println("Controller created");
+  logger.println("Controller created");
 }
 
 Controller::~Controller() {
@@ -25,8 +25,10 @@ void Controller::init() {
 
 void Controller::setUpLogger() {
   #ifdef WebSerial
-    WebSerial.begin(115200);
-    WebSerial.println("Logger set up");
+    logger.init(115200);
+    logger.println("Logger set up");
+  #else
+  
   #endif
 }
 
@@ -55,9 +57,9 @@ void Controller::setUpDigitalOutputs() {
 
 void Controller::setUpDigitalInputs() {
   //Testing pourpose
-  pinMode(PORT_B0, INPUT_PULLUP);
+  // pinMode(PORT_B0, INPUT_PULLUP);
 
-  // for (uint8_t i = 0; i < inputs_size; i++) pinMode(inputs[i], INPUT_PULLUP);
+  for (uint8_t i = 0; i < inputs_size; i++) pinMode(inputs[i], INPUT);
 }
 
 void Controller::setUpAnalogInputs() {
@@ -66,7 +68,7 @@ void Controller::setUpAnalogInputs() {
 
 void Controller::setUpI2C() {
   while (!rtc_i2c.begin(I2C_SDA, I2C_SCL)){
-    WebSerial.println("RTC I2C not found");
+    logger.println("RTC I2C not found");
     delay(1000);
   }
   
@@ -74,14 +76,14 @@ void Controller::setUpI2C() {
 
 void Controller::setUpRTC() {
   if (!rtc.begin(&rtc_i2c)) {
-    WebSerial.println("Couldn't find RTC");
+    logger.println("Couldn't find RTC");
     while (1);
   }
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
   DateTime now = rtc.now();
   if (true) {
-    Serial.println("RTC time seems invalid. Adjusting to NTP time.");
+    logger.println("RTC time seems invalid. Adjusting to NTP time.");
     
     timeClient.begin();
     timeClient.setTimeOffset(SECS_IN_HR * TIME_ZONE_OFFSET_HRS);

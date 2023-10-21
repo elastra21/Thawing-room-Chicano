@@ -45,33 +45,27 @@ void WIFI::init(const char* ssid, const char* password, const char* hostname){
 }
 
 void WIFI::setUpWebServer(bool brigeSerial){
-  if(!SPIFFS.begin(true)){
-    Serial.println("An Error has occurred while mounting SPIFFS");
-    return;
-  }
-
-
   /*use mdns for host name resolution*/
   if (!MDNS.begin(hostname)){ // http://esp32.local
-    Serial.println("Error setting up MDNS responder!");
+    logger.println("Error setting up MDNS responder!");
     while (1){
       delay(1000);
     }
   }
-  Serial.println("mDNS responder started Pinche Hugo");
+  logger.println("mDNS responder started Pinche Hugo");
   /*return index page which is stored in serverIndex */
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(SPIFFS, "/index.html", "text/html");
-    // server.send(200, "text/html", loginIndex); 
+    request->send(200, "text/html", INDEX_HTML);
   });
 
   server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(SPIFFS, "/style.css", "text/css");
+    request->send(200, "text/css", STYLE_CSS);
   });
 
   server.on("/serverIndex", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(SPIFFS, "/server-index.html", "text/html");
+    request->send(200, "text/html", SERVER_INDEX_HTML);
   });
+  
   /*handling uploading firmware file */
   server.on("/reset", HTTP_POST, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Resetting...");
@@ -98,11 +92,11 @@ void WIFI::connectToWiFi(){
   EEPROM.begin(32);
   while (WiFi.status() != WL_CONNECTED) {
     delay(2000);
-    Serial.println("Wifi connecting...");
+    logger.println("Wifi connecting...");
       
     notConnectedCounter++;
     if(notConnectedCounter > 7) { // Reset board if not connected after 5s
-      Serial.println("Resetting due to Wifi not connecting...");
+      logger.println("Resetting due to Wifi not connecting...");
       const uint8_t num_of_tries = EEPROM.readInt(1);
       if (num_of_tries == 3) break;          
       else {
@@ -118,8 +112,7 @@ void WIFI::connectToWiFi(){
   EEPROM.commit();
   EEPROM.end();
 
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
+  logger.printValue("IP address: ", String(WiFi.localIP().toString()));
 }
 
 void WIFI::setUpOTA(){
@@ -129,18 +122,18 @@ void WIFI::setUpOTA(){
     String type;
     type = ArduinoOTA.getCommand() == U_FLASH ? "sketch" : "filesystem";
       // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-    Serial.println("Start updating " + type);
+    logger.println("Start updating " + type);
     }).onEnd([]() {
-      Serial.println("\nEnd");
+      logger.println("\nEnd");
     }).onProgress([](unsigned int progress, unsigned int total) {
       Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
     }).onError([](ota_error_t error) {
       Serial.printf("Error[%u]: ", error);
-      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-      else if (error == OTA_END_ERROR) Serial.println("End Failed");
+      if (error == OTA_AUTH_ERROR) logger.println("Auth Failed");
+      else if (error == OTA_BEGIN_ERROR) logger.println("Begin Failed");
+      else if (error == OTA_CONNECT_ERROR) logger.println("Connect Failed");
+      else if (error == OTA_RECEIVE_ERROR) logger.println("Receive Failed");
+      else if (error == OTA_END_ERROR) logger.println("End Failed");
     });
     ArduinoOTA.begin();
   }
