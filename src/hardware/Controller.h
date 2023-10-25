@@ -1,9 +1,9 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include "WS_V2.h"
 #include "WIFI.h"
 #include <Wire.h>
+#include <WS_V2.h>
 #include "config.h"
 #include "Logger.h"
 #include <RTClib.h>
