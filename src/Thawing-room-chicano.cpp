@@ -874,27 +874,74 @@ int responseToInt(byte *value, size_t len) {
   return puta_mierda_mal_parida.toInt();
 }
 
-void setUpDefaultParameters(){
-  // Default parameters
-  N_st1.N_f1_st1_ontime = 1;
-  N_st1.N_f1_st1_offtime = 1;
+void setUpDefaultParameters() {
+  // Inicializa SPIFFS
+ if (!SPIFFS.begin(true)) {
+    Serial.println("An error has occurred while mounting SPIFFS");
+    return;
+  }
 
-  N_st2.N_f1_st2_ontime = 1;
-  N_st2.N_f1_st2_offtime = 1;
-  N_st2.N_s1_st2_ontime = 0.5;
-  N_st2.N_s1_st2_offtime = 1;
+  // Abre el archivo de parámetros por defecto
+  File file = SPIFFS.open("/defaultParameters.txt", "r");
+  if (!file) {
+    Serial.println("Error al abrir el archivo de parámetros");
+    return;
+  }
 
-  N_st3.N_f1_st3_ontime = 10;
-  N_st3.N_f1_st3_offtime = 30;
-  N_st3.N_s1_st3_ontime = 1;
-  N_st3.N_s1_st3_offtime = 15;
+  // Lee el contenido del archivo en una cadena de texto
+  String jsonText = file.readString();
+  file.close();
 
-  N_SP.N_A = 0.5;
-  N_SP.N_B = 20;
+  // Parsea el JSON
+  StaticJsonDocument<1024> doc;
+  DeserializationError error = deserializeJson(doc, jsonText);
+  if (error) {
+    Serial.println("Error al parsear el JSON");
+    return;
+  }
 
-  N_tset.N_ts_set = 4;
-  N_tset.N_tc_set = 2;
+  // Asigna los valores parseados a las variables correspondientes
+  N_st1.N_f1_st1_ontime = doc["stage1"]["f1Ontime"];
+  N_st1.N_f1_st1_offtime = doc["stage1"]["f1Offtime"];
+
+  N_st2.N_f1_st2_ontime = doc["stage2"]["f1Ontime"];
+  N_st2.N_f1_st2_offtime = doc["stage2"]["f1Offtime"];
+  N_st2.N_s1_st2_ontime = doc["stage2"]["s1Ontime"];
+  N_st2.N_s1_st2_offtime = doc["stage2"]["s1Offtime"];
+
+  N_st3.N_f1_st3_ontime = doc["stage3"]["f1Ontime"];
+  N_st3.N_f1_st3_offtime = doc["stage3"]["f1Offtime"];
+  N_st3.N_s1_st3_ontime = doc["stage3"]["s1Ontime"];
+  N_st3.N_s1_st3_offtime = doc["stage3"]["s1Offtime"];
+
+  N_SP.N_A = doc["setPoint"]["A"];
+  N_SP.N_B = doc["setPoint"]["B"];;
+
+  N_tset.N_ts_set = doc["tset"]["tsSet"];
+  N_tset.N_tc_set = doc["tset"]["tcSet"];
+
+  // Imprime los valores de las variables
+  Serial.println("Valores de las variables:");
+  Serial.print("N_st1.N_f1_st1_ontime: "); Serial.println(N_st1.N_f1_st1_ontime);
+  Serial.print("N_st1.N_f1_st1_offtime: "); Serial.println(N_st1.N_f1_st1_offtime);
+  
+  Serial.print("N_st2.N_f1_st2_ontime: "); Serial.println(N_st2.N_f1_st2_ontime);
+  Serial.print("N_st2.N_f1_st2_offtime: "); Serial.println(N_st2.N_f1_st2_offtime);
+  Serial.print("N_st2.N_s1_st2_ontime: "); Serial.println(N_st2.N_s1_st2_ontime);
+  Serial.print("N_st2.N_s1_st2_offtime: "); Serial.println(N_st2.N_s1_st2_offtime);
+
+  Serial.print("N_st3.N_f1_st3_ontime: "); Serial.println(N_st3.N_f1_st3_ontime);
+  Serial.print("N_st3.N_f1_st3_offtime: "); Serial.println(N_st3.N_f1_st3_offtime);
+  Serial.print("N_st3.N_s1_st3_ontime: "); Serial.println(N_st3.N_s1_st3_ontime);
+  Serial.print("N_st3.N_s1_st3_offtime: "); Serial.println(N_st3.N_s1_st3_offtime);
+
+    logger.printValue("N_SP.N_A: ", String( N_SP.N_A));
+  logger.printValue("N_SP.N_B: ", String( N_SP.N_B));
+
+  Serial.print("N_tset.N_ts_set: "); Serial.println(N_tset.N_ts_set);
+  Serial.print("N_tset.N_tc_set: "); Serial.println(N_tset.N_tc_set);
 }
+
 
 // float getIRTemp() {
 //   uint16_t result;
