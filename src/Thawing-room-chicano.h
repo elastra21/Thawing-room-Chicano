@@ -23,6 +23,8 @@ void setUpDefaultParameters();
 String addressToString(uint8_t *address);
 int responseToInt(byte *value, size_t len);
 float responseToFloat(byte *value, size_t len);
+void sendTemperaturaAlert(float temp, String sensor);
+bool validateTemperature(float temp, uint8_t type);
 void callback(char *topic, byte *payload, unsigned int len);  //callback function for mqtt, see definition after loop
 void runConfigFile(char* ssid, char* password, char* hostname, char* ip_address, uint16_t* port, char* username);
 
@@ -30,6 +32,20 @@ void runConfigFile(char* ssid, char* password, char* hostname, char* ip_address,
 //---- timing settings -----////////////////////////////////////////////////////////////////////////////////
 
 #define MINS 60000
+
+// ---- Probes min and max values ----//////////////////////////////////////////////////////////////////////// 
+
+#define TA_MIN -5
+#define TA_MAX 25
+#define TA_DEF 15 
+
+#define TS_MIN -20
+#define TS_MAX 10
+#define TS_DEF 5
+
+#define TC_MIN -20
+#define TC_MAX 5
+#define TC_DEF -1
 
 //------------ structure definitions an flags -------------------------------------------------------->
 // Fan F1 and sprinkler S1 value
@@ -71,5 +87,6 @@ typedef struct { float N_f1_st2_ontime; float N_f1_st2_offtime; float N_s1_st2_o
 // fan (F1) and sprinklers (S1) STAGE 3 on and off time 
 typedef struct { float N_f1_st3_ontime; float N_f1_st3_offtime; float N_s1_st3_ontime; float N_s1_st3_offtime; } data_st3;
 
+enum SensorProbes{TA_TYPE, TS_TYPE, TC_TYPE};
 
 #endif
