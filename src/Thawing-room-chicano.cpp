@@ -132,7 +132,7 @@ void setup() {
   // pinMode(FAN2_IO, OUTPUT);
   // controller.writeDigitalOutput(FAN2_IO, LOW);
   controller.setUpWiFi(SSID, PASS, HOST_NAME);
-  controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
+  controller.connectToWiFi(/* web_server */ false, /* web_serial */ true, /* OTA */ true);
   // controller.setUpRTC();
 
   mqtt.connect(IP_ADDRESS, PORT, USERNAME);
