@@ -86,6 +86,12 @@ void WIFI::setUpWebServer(bool brigeSerial){
   server.begin();
 }
 
+String WIFI::getIP(){
+  String ip =  MDNS.queryHost("beer-control").toString();
+  Serial.println(ip);
+  return ip;
+}
+
 void WIFI::connectToWiFi(){
   WiFi.begin(ssid, password);
   uint32_t notConnectedCounter = 0;

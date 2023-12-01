@@ -64,6 +64,7 @@
 #define ACK_B               "mfp2/ack_B"
 #define ACK_TS              "mfp2/ack_Ts"
 #define ACK_TC              "mfp2/ack_Tc"
+#define SPOILED_SENSOR      "mfp2/spoiled_sensor"
 
 
 
@@ -77,11 +78,19 @@ class MqttClient {
     bool refreshMQTTStatus();
     bool isServiceAvailable();
     bool getConnectionStatus();
+    int responseToInt(byte *value, size_t len);
     void publishData(String topic, double value);
     void publishData(String topic, String value);
+    float responseToFloat(byte *value, size_t len);
+    bool isTopicEqual(const char* a, const char* b);
     void setCallback(std::function<void (char *, uint8_t *, unsigned int)> callback);
+    // void publishEcava(const String* topics, const String* values, int arraySize, const char* mqttTopic);
+    // String getIsoTimestamp();
+    // void exampleCall();
   private:
+    uint16_t mqtt_port;
     char mqtt_username[MQTT_USERNAME_SIZE];  
+    char mqtt_domain[MQTT_USERNAME_SIZE];
     bool no_service_available = true;
     bool last_connection_state = false;
 

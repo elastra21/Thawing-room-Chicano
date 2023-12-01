@@ -9,6 +9,11 @@ void MqttClient::connect(const char *domain, uint16_t port, const char *username
   strncpy(mqtt_username, username, sizeof(mqtt_username) - 1);
   mqtt_username[sizeof(mqtt_username) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
 
+  strncpy(mqtt_domain, domain, sizeof(mqtt_domain) - 1);
+  mqtt_domain[sizeof(mqtt_domain) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
+
+  mqtt_port = port;
+
   mqttClient.setServer(domain, port);
   if (mqttClient.connect(mqtt_username)) {
     logger.println("Connection has been established, well done");
@@ -25,6 +30,9 @@ bool MqttClient::isServiceAvailable() {
 
 void MqttClient::reconnect() {
   while (!mqttClient.connected()) {
+    mqttClient.flush();
+    mqttClient.disconnect();
+    mqttClient.setServer(mqtt_domain, mqtt_port);
     logger.print("Attempting MQTT connection...");
     if (mqttClient.connect(mqtt_username)) {
       logger.println("connected");
@@ -37,14 +45,18 @@ void MqttClient::reconnect() {
   }
 }
 
+bool MqttClient::isTopicEqual(const char* a, const char* b){
+  return strcmp(a, b) == 0;
+}
+
 bool MqttClient::isConnected() {
   return mqttClient.connected();
 }
 
 void MqttClient::loop() {
-  if (!mqttClient.connected()) {
-    reconnect();
-  }
+  if (!isServiceAvailable()) return;
+  if (!mqttClient.connected()) reconnect();
+  
   delay(100);
   mqttClient.loop();
 }
@@ -114,4 +126,16 @@ bool MqttClient::refreshMQTTStatus() {
 
 bool MqttClient::getConnectionStatus() {
   return last_connection_state;
+}
+
+float MqttClient::responseToFloat(byte *value, size_t len) {
+  String string_builder;
+  for (int i = 0; i < len; i++) string_builder += (char)value[i];
+  return string_builder.toFloat();
+}
+
+int MqttClient::responseToInt(byte *value, size_t len) {
+  String string_builder;
+  for (int i = 0; i < len; i++) string_builder += (char)value[i];
+  return string_builder.toInt();
 }
