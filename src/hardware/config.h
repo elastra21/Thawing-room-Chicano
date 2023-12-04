@@ -37,6 +37,7 @@
 #define TA_AI       AI_0
 #define TS_AI       AI_1
 #define TC_AI       AI_2
+#define TI_AI       AI_3
 
 #define BUFFER_SIZE 60 
 
