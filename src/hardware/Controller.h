@@ -62,6 +62,7 @@ public:
     void writeDigitalOutput(uint8_t output, uint8_t value);
     // WIFI CLASS
     void loopOTA();
+    void WiFiLoop();
     void reconnectWiFi();
     bool isWiFiConnected();
     bool refreshWiFiStatus();

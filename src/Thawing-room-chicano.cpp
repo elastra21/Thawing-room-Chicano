@@ -115,8 +115,20 @@ uint8_t buffer_index = 0;  // buffer index
 
 MqttClient mqtt;
 Controller controller;
-
+TaskHandle_t communicationTask;
 PID air_in_feed_PID(&PIDinput, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);  // DIRECT or REVERSE
+
+void backgroundTasks(void* pvParameters) {
+  for (;;) {
+    controller.WiFiLoop();
+
+    if(controller.isWiFiConnected()) {
+      mqtt.loop();
+      controller.loopOTA();
+    }
+    delay(20);
+  }
+}
 
 
 void setup() {
@@ -138,6 +150,9 @@ void setup() {
   mqtt.connect(IP_ADDRESS, PORT, USERNAME);
   mqtt.setCallback(callback);
 
+  xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
+
+
   //Turn the PID on
   air_in_feed_PID.SetMode(AUTOMATIC);
   air_in_feed_PID.SetSampleTime(3000);
@@ -154,16 +169,6 @@ void loop() {
   }
 
   DateTime now = controller.getDateTime();
-
-  if (!controller.isWiFiConnected() && mqtt.isServiceAvailable()) {
-    controller.reconnectWiFi();
-    delay(500);
-    return;
-  }
-
-  controller.loopOTA();
-  
-  if (mqtt.isServiceAvailable()) mqtt.loop();
 
   updateTemperature();
 

@@ -164,3 +164,10 @@ void Controller::loopOTA() {
 void Controller::setUpWiFi(const char* ssid, const char* password, const char* hostname) {
   wifi.init(ssid, password, hostname);
 }
+void Controller::WiFiLoop() {
+  if (!isWiFiConnected()) {
+    reconnectWiFi();
+    delay(500);
+    return;
+  }
+}
