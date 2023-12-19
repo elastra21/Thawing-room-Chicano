@@ -418,7 +418,7 @@ void loop() {
     // Turn OFF F1 when the time set in the configuration is over
     if (MTR_State == 1 && (LOW != controller.readDigitalInput(FAN_IO)) && (millis() - F1_timer >= (N_st1.N_f1_st1_ontime * MINS))) {
       controller.writeDigitalOutput(FAN_IO, LOW);
-      // controller.writeAnalogOutput(AIR_PWM, 0);
+      controller.writeAnalogOutput(AIR_PWM, 0);
       WebSerial.println("Stage 1 F1 Off");
       MTR_State = 0;
       F1_data.M_F1 = 2;  // When M_F1 = 2 ==> OFF
@@ -503,28 +503,28 @@ void loop() {
     }
 
     // Activate the PID when F1 ON
-    // if (MTR_State == 1 && (millis() - turn_on_pid_timer >= 3000)) {
-    //   PIDinput = TA_F;
-    //   coefOutput = (coefPID * Output) / 100;  // Transform the Output of the PID to the desired max value
-    //   WebSerial.println(coefOutput);
-    //   air_in_feed_PID.Compute();
-    //   controller.writeAnalogOutput(AIR_PWM, Output);
-    //   Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
-    //   WebSerial.println("Converted_Output is " + String(Converted_Output));
-    //   turn_on_pid_timer = millis();
-    // }
+    if (MTR_State == 1 && (millis() - turn_on_pid_timer >= 3000)) {
+      PIDinput = TA_F;
+      coefOutput = (coefPID * Output) / 100;  // Transform the Output of the PID to the desired max value
+      WebSerial.println(coefOutput);
+      air_in_feed_PID.Compute();
+      controller.writeAnalogOutput(AIR_PWM, Output);
+      Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
+      WebSerial.println("Converted_Output is " + String(Converted_Output));
+      turn_on_pid_timer = millis();
+    }
 
-    // // Put the PID at 0 when F1 OFF
-    // if (MTR_State == 0 && (millis() - turn_on_pid_timer >= 3000)) {
-    //   //Setpoint = 0;
-    //   PIDinput = 0;
-    //   Output = 0;
-    //   coefOutput = 0;
-    //   controller.writeAnalogOutput(AIR_PWM, Output);
-    //   Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
-    //   WebSerial.println("Converted_Output is " + String(Converted_Output));
-    //   turn_off_pid_timer = millis();
-    // }
+    // Put the PID at 0 when F1 OFF
+    if (MTR_State == 0 && (millis() - turn_on_pid_timer >= 3000)) {
+      //Setpoint = 0;
+      PIDinput = 0;
+      Output = 0;
+      coefOutput = 0;
+      controller.writeAnalogOutput(AIR_PWM, Output);
+      Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
+      WebSerial.println("Converted_Output is " + String(Converted_Output));
+      turn_off_pid_timer = millis();
+    }
 
     if ((MTR_State == 1 && MTR2_State == 0 && temp_data.Ta_N < (Setpoint - 2)) && (millis() - F2_stg_2_timmer >= 3000)){
       controller.writeDigitalOutput(FAN2_IO, HIGH);
@@ -601,7 +601,7 @@ void loop() {
     // Turn ON F1 when time is over
     if (MTR_State == 0 && (millis() - F1_stg_3_timer >= (N_st3.N_f1_st3_offtime * MINS))) {
       controller.writeDigitalOutput(FAN_IO, HIGH);
-      // controller.writeAnalogOutput(AIR_PWM, duty_cycle);
+      controller.writeAnalogOutput(AIR_PWM, Output);
       WebSerial.println("Stage 3 F1 On");
       MTR_State = 1;
       F1_data.M_F1 = 1;
@@ -614,7 +614,7 @@ void loop() {
     // Turn OFF F1 when time is over
     if (MTR_State == 1 && (millis() - F1_stg_3_timer >= (N_st3.N_f1_st3_ontime * MINS))) {
       controller.writeDigitalOutput(FAN_IO, LOW);
-      // controller.writeAnalogOutput(AIR_PWM, 0);
+      controller.writeAnalogOutput(AIR_PWM, 0);
       WebSerial.println("Stage 3 F1 Off");
       MTR_State = 0;
       F1_data.M_F1 = 2;
