@@ -508,7 +508,7 @@ void loop() {
       coefOutput = (coefPID * Output) / 100;  // Transform the Output of the PID to the desired max value
       WebSerial.println(coefOutput);
       air_in_feed_PID.Compute();
-      controller.writeAnalogOutput(AIR_PWM, Output);
+      controller.writeAnalogOutput(AIR_PWM, coefOutput);
       Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
       WebSerial.println("Converted_Output is " + String(Converted_Output));
       turn_on_pid_timer = millis();
@@ -520,7 +520,7 @@ void loop() {
       PIDinput = 0;
       Output = 0;
       coefOutput = 0;
-      controller.writeAnalogOutput(AIR_PWM, Output);
+      controller.writeAnalogOutput(AIR_PWM, coefOutput);
       Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
       WebSerial.println("Converted_Output is " + String(Converted_Output));
       turn_off_pid_timer = millis();
@@ -601,7 +601,7 @@ void loop() {
     // Turn ON F1 when time is over
     if (MTR_State == 0 && (millis() - F1_stg_3_timer >= (N_st3.N_f1_st3_offtime * MINS))) {
       controller.writeDigitalOutput(FAN_IO, HIGH);
-      controller.writeAnalogOutput(AIR_PWM, Output);
+      controller.writeAnalogOutput(AIR_PWM, coefOutput);
       WebSerial.println("Stage 3 F1 On");
       MTR_State = 1;
       F1_data.M_F1 = 1;
