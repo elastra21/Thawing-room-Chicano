@@ -14,7 +14,7 @@
 // setting PWM properties
 #define AIR_PWM     7   
 #define FREQ        5000 
-#define AIR_PIN     PORT_C2  
+#define AIR_PIN     PORT_A3  
 #define RESOLUTION  6    
 
 //------------ IO's    -------------------------------------------------------------------->
@@ -37,7 +37,7 @@
 #define TA_AI       AI_0
 #define TS_AI       AI_1
 #define TC_AI       AI_2
-#define TI_AI       AI_3
+#define TI_AI       PORT_C2
 
 #define BUFFER_SIZE 60 
 

@@ -41,7 +41,7 @@
 #define AI_0         PORT_A0 //
 #define AI_1         PORT_A1 // Was causing problems
 #define AI_2         PORT_A2 //
-#define AI_3         PORT_A3 // 
+// #define AI_3         PORT_A3 // 
 
 const uint8_t analog_inputs[] = {/* AI_0, */ AI_1 /*, AI_2, AI_3 */}; //PORT_A //NEVR USED
 
