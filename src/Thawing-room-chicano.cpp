@@ -242,7 +242,7 @@ void loop() {
     WebSerial.println("Ts: " + String(TS));
     WebSerial.println("TC: " + String(TC));
     WebSerial.println("Ti: " + String(TI));
-    WebSerial.println(controller.readAnalogInput(TI_AI));
+    // WebSerial.println(controller.readAnalogInput(TI_AI));   // <=========== this shit it's da problem 
     WebSerial.println("Nstart: " + String(N_start));
     WebSerial.println("Nstop: " + String(N_stop));
     WebSerial.println("A variable: " + String(N_SP.N_A));
@@ -850,7 +850,7 @@ void updateTemperature() {
   TA = controller.readTempFrom(TA_AI);
   TS = controller.readTempFrom(TS_AI);
   TC = controller.readTempFrom(TC_AI);
-  TI = controller.readTempFrom(TI_AI);
+  // TI = controller.readTempFrom(TI_AI);  // <=========== this shit it's da problem 
 
   // TA = 0;
   // TS = 0; // was desactivated
