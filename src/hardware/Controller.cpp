@@ -19,6 +19,7 @@ Controller::~Controller() {
 }
 
 void Controller::init() {
+  WebSerial.println("===========> Reboted!! <===========");
   setUpI2C();
   setUpIOS();
 }
@@ -117,6 +118,8 @@ bool Controller::readDigitalInput(uint8_t input) {
 }
 
 void Controller::writeAnalogOutput(uint8_t output, uint8_t value) {
+  WebSerial.print("Writing analog output: ");
+  WebSerial.print(output);
   ledcWrite(AIR_PWM, value);
 }
 

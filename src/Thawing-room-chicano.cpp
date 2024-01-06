@@ -34,7 +34,7 @@ double Setpoint;  // will be the desired value
 // PID parameters
 double Kp = 0, Ki = 10, Kd = 0;
 
-double coefOutput = 255;  // Output for the infeed (New Analog Output that will be sent to S1
+double coefOutput = 0;  // Output for the infeed (New Analog Output that will be sent to S1
 uint8_t coefPID = 100;
 float Output_float = 0.0;
 uint8_t Converted_Output = 0;
@@ -419,7 +419,7 @@ void loop() {
     // Turn OFF F1 when the time set in the configuration is over
     if (MTR_State == 1 && (LOW != controller.readDigitalInput(FAN_IO)) && (millis() - F1_timer >= (N_st1.N_f1_st1_ontime * MINS))) {
       controller.writeDigitalOutput(FAN_IO, LOW);
-      controller.writeAnalogOutput(AIR_PWM, 255); // for chicano output is inverted 255=0V and 0=10V
+      controller.writeAnalogOutput(AIR_PWM, 0); // for chicano output is inverted 255=0V and 0=10V
       WebSerial.println("Stage 1 F1 Off");
       MTR_State = 0;
       F1_data.M_F1 = 2;  // When M_F1 = 2 ==> OFF
@@ -506,7 +506,7 @@ void loop() {
     // Activate the PID when F1 ON
     if (MTR_State == 1 && (millis() - turn_on_pid_timer >= 3000)) {
       PIDinput = TA_F;
-      coefOutput = 255 - ((coefPID * Output) / 100);  // Transform the Output of the PID to the desired max value and 255 is to invert the signal
+      coefOutput = (coefPID * Output) / 100;
       WebSerial.println(coefOutput);
       air_in_feed_PID.Compute();
       controller.writeAnalogOutput(AIR_PWM, coefOutput);
@@ -520,7 +520,7 @@ void loop() {
       //Setpoint = 0;
       PIDinput = 0;
       Output = 0;
-      coefOutput = 255; // inverted on chicano so 255=0V
+      coefOutput = 0; // inverted on chicano so 255=0V
       controller.writeAnalogOutput(AIR_PWM, coefOutput);
       Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
       WebSerial.println("Converted_Output is " + String(Converted_Output));
@@ -556,7 +556,7 @@ void loop() {
     START1 = START2 = Stage2_RTC_set = MTR_State = 0;
 
     // Turn All Output OFF
-    controller.writeAnalogOutput(AIR_PWM, 255); // inverted on chicano so 255=0V
+    controller.writeAnalogOutput(AIR_PWM, 0); // inverted on chicano so 255=0V
     controller.writeDigitalOutput(STAGE_1_IO, LOW);
     controller.writeDigitalOutput(STAGE_2_IO, LOW);
     controller.writeDigitalOutput(STAGE_3_IO, LOW);
@@ -565,7 +565,7 @@ void loop() {
     controller.writeDigitalOutput(FAN2_IO, LOW);
 
     Output = 0;
-    coefOutput = 255; //inverted on chicano so 255=0V
+    coefOutput = 0; //inverted on chicano so 255=0V
 
     F1_data.M_F1 = 2;  // When M_F1 = 2 ==> OFF
     F2_data.M_F2 = 0; // // When M_F2 = 0 ==> OFF
@@ -818,11 +818,11 @@ void stopRoutine() {
     controller.writeDigitalOutput(VALVE_IO, LOW);
     controller.writeDigitalOutput(FAN_IO, LOW);
     controller.writeDigitalOutput(FAN2_IO, LOW);
-    controller.writeAnalogOutput(AIR_PWM, 255); // with chicano 
+    controller.writeAnalogOutput(AIR_PWM, LOW); // with chicano 
 
     stage = 0;
     Output = 0;
-    coefOutput = 255; // inverted for chicano so 255=0V
+    coefOutput = 0; // inverted for chicano so 255=0V
     stop_temp1 = 1;
 
     F1_data.M_F1 = S1_data.M_S1 = 2;
