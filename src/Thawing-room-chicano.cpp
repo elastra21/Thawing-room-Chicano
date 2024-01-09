@@ -126,7 +126,7 @@ void backgroundTasks(void* pvParameters) {
       mqtt.loop();
       controller.loopOTA();
     }
-    delay(20);
+    delay(100);
   }
 }
 
@@ -151,13 +151,12 @@ void setup() {
   mqtt.setCallback(callback);
 
   xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
-
-
   //Turn the PID on
   air_in_feed_PID.SetMode(AUTOMATIC);
   air_in_feed_PID.SetSampleTime(3000);
   //Adjust PID values
   air_in_feed_PID.SetTunings(Kp, Ki, Kd);
+  
   delay(750);
 }
 
@@ -509,7 +508,8 @@ void loop() {
       coefOutput = (coefPID * Output) / 100;
       WebSerial.println(coefOutput);
       air_in_feed_PID.Compute();
-      controller.writeAnalogOutput(AIR_PWM, coefOutput);
+      controller.writeAnalogOutput(AIR_PWM, Output);
+      // controller.writeAnalogOutput(AIR_PWM, coefOutput);
       Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
       WebSerial.println("Converted_Output is " + String(Converted_Output));
       turn_on_pid_timer = millis();
@@ -521,7 +521,8 @@ void loop() {
       PIDinput = 0;
       Output = 0;
       coefOutput = 0; // inverted on chicano so 255=0V
-      controller.writeAnalogOutput(AIR_PWM, coefOutput);
+      controller.writeAnalogOutput(AIR_PWM, Output);
+      // controller.writeAnalogOutput(AIR_PWM, coefOutput);
       Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
       WebSerial.println("Converted_Output is " + String(Converted_Output));
       turn_off_pid_timer = millis();
@@ -907,17 +908,3 @@ void setUpDefaultParameters(){
   N_tset.N_ts_set = 4;
   N_tset.N_tc_set = 2;
 }
-
-// float getIRTemp() {
-//   uint16_t result;
-//   float temperature;
-//   Wire.beginTransmission(IR_SENSOR_ADDRESS);
-//   Wire.write(READ_TEMPERATURE);
-//   Wire.endTransmission(false);
-//   Wire.requestFrom(IR_SENSOR_ADDRESS, 2);
-//   result = Wire.read();
-//   result |= Wire.read() << 8;
-
-//   temperature = result * 0.02 - 273.15;
-//   return temperature;
-// }

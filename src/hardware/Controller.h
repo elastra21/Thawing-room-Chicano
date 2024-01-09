@@ -12,7 +12,7 @@
 #include <NTPClient.h>
 #include <DallasTemperature.h>
 
-// #define WebSerial Serial
+#define WebSerial Serial
 
 #define TEMPERATURE_MIN  -50 // Minimum temperature value (in Celsius)
 #define TEMPERATURE_MAX  150
