@@ -140,7 +140,6 @@ void setup() {
   controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
   controller.setUpRTC();
 
-  WebSerial.println("===========> Reboted!! <===========");
 
   mqtt.connect(IP_ADDRESS, PORT, USERNAME);
   mqtt.setCallback(callback);
@@ -151,6 +150,8 @@ void setup() {
   air_in_feed_PID.SetSampleTime(3000);
   //Adjust PID values
   air_in_feed_PID.SetTunings(Kp, Ki, Kd);
+  
+  WebSerial.println("===========> Reboted!! <===========");
   
   setStage(0);
 
