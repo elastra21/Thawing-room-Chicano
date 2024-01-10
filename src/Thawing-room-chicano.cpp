@@ -133,30 +133,27 @@ void backgroundTasks(void* pvParameters) {
 
 void setup() {
   controller.init();
-  
+
   setUpDefaultParameters();
 
-  setStage(0);
-
-  // Using FREE pins as digital outputs
-  // pinMode(FAN_IO, OUTPUT);
-  // controller.writeDigitalOutput(FAN_IO, LOW);
-  // pinMode(FAN2_IO, OUTPUT);
-  // controller.writeDigitalOutput(FAN2_IO, LOW);
   controller.setUpWiFi(SECRET_SSID, SECRET_PASS,HOST_NAME);
   controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
   controller.setUpRTC();
 
+  WebSerial.println("===========> Reboted!! <===========");
+
   mqtt.connect(IP_ADDRESS, PORT, USERNAME);
   mqtt.setCallback(callback);
 
-  xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
+  // xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
   //Turn the PID on
   air_in_feed_PID.SetMode(AUTOMATIC);
   air_in_feed_PID.SetSampleTime(3000);
   //Adjust PID values
   air_in_feed_PID.SetTunings(Kp, Ki, Kd);
   
+  setStage(0);
+
   delay(750);
 }
 
@@ -168,6 +165,13 @@ void loop() {
   }
 
   DateTime now = controller.getDateTime();
+
+  controller.WiFiLoop();
+
+  if(controller.isWiFiConnected()) {
+    mqtt.loop();
+    controller.loopOTA();
+  }
 
   updateTemperature();
 
@@ -832,7 +836,9 @@ void stopRoutine() {
     mqtt.publishData(m_F1, F1_data.M_F1);
     mqtt.publishData(m_F2, F2_data.M_F2);
     mqtt.publishData(m_S1, S1_data.M_S1);
+
     setStage(0);
+
     WebSerial.println("Stage 0 Status Send packet ");
   }
 

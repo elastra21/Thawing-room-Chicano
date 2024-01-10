@@ -19,7 +19,6 @@ Controller::~Controller() {
 }
 
 void Controller::init() {
-  WebSerial.println("===========> Reboted!! <===========");
   setUpI2C();
   setUpIOS();
 }
