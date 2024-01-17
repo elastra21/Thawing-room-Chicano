@@ -24,20 +24,54 @@ bool MqttClient::isServiceAvailable() {
   return !no_service_available;
 }
 
+// void MqttClient::reconnect() {
+//   while (!mqttClient.connected()) {
+//     WebSerial.print("Attempting MQTT connection...");
+//     if (mqttClient.connect(mqtt_username)) {
+//       WebSerial.println("connected");
+//       subscribeRoutine();
+//     } else {
+//       WebSerial.print("failed, rc=");
+//       WebSerial.print(mqttClient.state());
+//       WebSerial.println(" try again in 5 seconds");
+//       delay(5000);
+//     }
+//   }
+// }
+
 void MqttClient::reconnect() {
-  while (!mqttClient.connected()) {
-    WebSerial.print("Attempting MQTT connection...");
-    if (mqttClient.connect(mqtt_username)) {
-      WebSerial.println("connected");
-      subscribeRoutine();
-    } else {
-      WebSerial.print("failed, rc=");
-      WebSerial.print(mqttClient.state());
-      WebSerial.println(" try again in 5 seconds");
-      delay(5000);
+  static unsigned long lastReconnectAttempt = 0;
+  unsigned long now = millis();
+  static int reconnectAttempts = 0;
+
+  if (!mqttClient.connected()) {
+    if (now - lastReconnectAttempt > 120000 || reconnectAttempts == 0) { // 120000ms = 2 minutos
+      lastReconnectAttempt = now;
+
+      if (reconnectAttempts < 5) {
+        WebSerial.print("Attempting MQTT connection...");
+
+        if (mqttClient.connect(mqtt_username)) {
+          WebSerial.println("connected");
+          subscribeRoutine();
+          reconnectAttempts = 0; // Resetear los intentos si la conexión es exitosa
+        } else {
+          WebSerial.print("failed, rc=");
+          WebSerial.print(mqttClient.state());
+          WebSerial.println(" try again in 2 minutes");
+          reconnectAttempts++;
+        }
+      } else {
+        WebSerial.println("Max reconnect attempts reached, try again in 2 minutes");
+        reconnectAttempts = 0; // Resetear los intentos después de alcanzar el máximo
+      }
     }
+  } else {
+    reconnectAttempts = 0; // Resetear los intentos si ya está conectado
   }
 }
+
+
 
 bool MqttClient::isConnected() {
   return mqttClient.connected();

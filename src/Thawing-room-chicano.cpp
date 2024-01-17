@@ -126,7 +126,7 @@ void backgroundTasks(void* pvParameters) {
       mqtt.loop();
       controller.loopOTA();
     }
-    delay(100);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
 }
 
@@ -138,13 +138,13 @@ void setup() {
 
   controller.setUpWiFi(SECRET_SSID, SECRET_PASS,HOST_NAME);
   controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
-  controller.setUpRTC();
+  // controller.setUpRTC();
 
 
   mqtt.connect(IP_ADDRESS, PORT, USERNAME);
   mqtt.setCallback(callback);
 
-  // xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
+  xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
   //Turn the PID on
   air_in_feed_PID.SetMode(AUTOMATIC);
   air_in_feed_PID.SetSampleTime(3000);
@@ -160,19 +160,21 @@ void setup() {
 
 void loop() {
   // if is for testing porpuse comment this "if" and replace DateTime "now" for: DateTime now(__DATE__, __TIME__); 
-  if (!controller.isRTCConnected()) {  
-    WebSerial.println("RTC not connected"); 
-    while (true) delay(1000);
-  }
 
-  DateTime now = controller.getDateTime();
+  // if (!controller.isRTCConnected()) {  
+  //   WebSerial.println("RTC not connected"); 
+  //   while (true) delay(1000);
+  // }
 
-  controller.WiFiLoop();
+  // DateTime now = controller.getDateTime();
+  DateTime now(__DATE__, __TIME__); 
 
-  if(controller.isWiFiConnected()) {
-    mqtt.loop();
-    controller.loopOTA();
-  }
+  // controller.WiFiLoop();
+
+  // if(controller.isWiFiConnected()) {
+  //   mqtt.loop();
+  //   // controller.loopOTA();
+  // }
 
   updateTemperature();
 
@@ -459,7 +461,7 @@ void loop() {
       F1_stg_2_timmer = millis();
     }
 
-    // Turn OFF F1 when time is over
+    // Turn OFF F1 when time is overcommunicationTask
     if (MTR_State == 1 && (millis() - F1_stg_2_timmer >= (N_st2.N_f1_st2_ontime * MINS))) {
       controller.writeDigitalOutput(FAN_IO, LOW);
       WebSerial.println("Stage 2 F1 Off");
@@ -484,7 +486,10 @@ void loop() {
     }
 
     // Turn OFF S1 when time is over
-    if ((S1_state == 1 && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_ontime * MINS))) || (MTR_State == 0)) {
+    unsigned long timeElapsed = millis() - S1_stg_2_timer;
+    bool timeConditionMet = timeElapsed >= (N_st2.N_s1_st2_ontime * MINS);
+
+    if ((S1_state == 1 || !MTR_State) && timeConditionMet) {
       controller.writeDigitalOutput(VALVE_IO, LOW);  // Output of S1
       S1_state = 0;
       WebSerial.println("Stage 2 S1 OFF");
@@ -508,7 +513,7 @@ void loop() {
     }
 
     // Activate the PID when F1 ON
-    if (MTR_State == 1 && (millis() - turn_on_pid_timer >= 3000)) {
+    if (MTR_State && (millis() - turn_on_pid_timer >= 3000)) {
       PIDinput = TA_F;
       coefOutput = (coefPID * Output) / 100;
       WebSerial.println(coefOutput);
@@ -521,7 +526,7 @@ void loop() {
     }
 
     // Put the PID at 0 when F1 OFF
-    if (MTR_State == 0 && (millis() - turn_on_pid_timer >= 3000)) {
+    if (MTR_State == 0 && (millis() - turn_off_pid_timer >= 3000)) {
       //Setpoint = 0;
       PIDinput = 0;
       Output = 0;
