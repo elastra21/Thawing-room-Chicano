@@ -373,6 +373,7 @@ void loop() {
        && Stage2_started == 0 && Stage2_RTC_set == 0)) {
 
     START1 = MTR_State = MTR2_State = C1_state = 0;
+    
     controller.writeDigitalOutput(STAGE_1_IO, LOW);
     controller.writeDigitalOutput(STAGE_2_IO, LOW);
     controller.writeDigitalOutput(STAGE_3_IO, LOW);
@@ -434,6 +435,7 @@ void loop() {
       WebSerial.println("Stage 1 init M_F1 OFF published ");
       F1_timer = millis();
     }
+    
   }
 
   //---- STAGE 2 ----////////////////////////////////////////////////////////////////////////////
@@ -518,8 +520,8 @@ void loop() {
       coefOutput = (coefPID * Output) / 100;
       WebSerial.println(coefOutput);
       air_in_feed_PID.Compute();
-      controller.writeAnalogOutput(AIR_PWM, Output);
-      // controller.writeAnalogOutput(AIR_PWM, coefOutput);
+      // controller.writeAnalogOutput(AIR_PWM, Output);
+      controller.writeAnalogOutput(AIR_PWM, coefOutput);
       Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
       WebSerial.println("Converted_Output is " + String(Converted_Output));
       turn_on_pid_timer = millis();
@@ -531,8 +533,8 @@ void loop() {
       PIDinput = 0;
       Output = 0;
       coefOutput = 0; // inverted on chicano so 255=0V
-      controller.writeAnalogOutput(AIR_PWM, Output);
-      // controller.writeAnalogOutput(AIR_PWM, coefOutput);
+      // controller.writeAnalogOutput(AIR_PWM, Output);
+      controller.writeAnalogOutput(AIR_PWM, coefOutput);
       Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
       WebSerial.println("Converted_Output is " + String(Converted_Output));
       turn_off_pid_timer = millis();
