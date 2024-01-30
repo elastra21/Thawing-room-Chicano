@@ -83,6 +83,7 @@ class MqttClient {
     void publishData(String topic, String value);
     float responseToFloat(byte *value, size_t len);
     bool isTopicEqual(const char* a, const char* b);
+    void onConnect(std::function<void ()> callback);
     void setCallback(std::function<void (char *, uint8_t *, unsigned int)> callback);
     // void publishEcava(const String* topics, const String* values, int arraySize, const char* mqttTopic);
     // String getIsoTimestamp();
@@ -93,6 +94,8 @@ class MqttClient {
     char mqtt_domain[MQTT_USERNAME_SIZE];
     bool no_service_available = true;
     bool last_connection_state = false;
+    std::function<void ()> callback_connect = NULL;
+
 
 };
 #endif

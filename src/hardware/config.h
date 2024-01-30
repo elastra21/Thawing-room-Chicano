@@ -18,6 +18,7 @@
 #define STAGE_1_IO  PORT_D0   
 #define STAGE_2_IO  PORT_D1
 #define STAGE_3_IO  PORT_D2
+
 #define VALVE_IO    PORT_C3 // changed to have more logic on the board
 #define FAN_IO      PORT_C0  
 #define FAN2_IO     PORT_C1 

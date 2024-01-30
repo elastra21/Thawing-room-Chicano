@@ -59,7 +59,7 @@ void Controller::setUpDigitalInputs() {
   //Testing pourpose
   // pinMode(PORT_B0, INPUT_PULLUP);
 
-  for (uint8_t i = 0; i < inputs_size; i++) pinMode(inputs[i], INPUT);
+  for (uint8_t i = 0; i < inputs_size; i++) pinMode(inputs[i], INPUT_PULLUP);
 }
 
 void Controller::setUpAnalogInputs() {
@@ -257,6 +257,16 @@ void Controller::runConfigFile(char* ssid, char* password, char* hostname, char*
   if (doc.containsKey("PORT")) *port = doc["PORT"];
   if (doc.containsKey("USERNAME")) strlcpy(username, doc["USERNAME"], HOSTNAME_SIZE);
   if (doc.containsKey("TOPIC")) strlcpy(prefix_topic, doc["TOPIC"], HOSTNAME_SIZE);
+
+  // logging all values
+  logger.println("SSID: " + String(ssid));
+  logger.println("WIFI_PASSWORD: " + String(password));
+  logger.println("HOST_NAME: " + String(hostname));
+  logger.println("IP_ADDRESS: " + String(ip_address));
+  logger.println("PORT: " + String(*port));
+  logger.println("USERNAME: " + String(username));
+  logger.println("TOPIC: " + String(prefix_topic));
+
 }
 
 void Controller::setUpDefaultParameters(stage_parameters &stage1_params, stage_parameters &stage2_params, stage_parameters &stage3_params, room_parameters &room, data_tset &N_tset){
@@ -300,7 +310,7 @@ void Controller::setUpDefaultParameters(stage_parameters &stage1_params, stage_p
 void Controller::WiFiLoop() {
   if (!isWiFiConnected()) {
     reconnectWiFi();
-    delay(500);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     return;
   }
 }

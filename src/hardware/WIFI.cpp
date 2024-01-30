@@ -49,9 +49,10 @@ void WIFI::setUpWebServer(bool brigeSerial){
   if (!MDNS.begin(hostname)){ // http://esp32.local
     logger.println("Error setting up MDNS responder!");
     while (1){
-      delay(1000);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
   }
+  
   logger.println("mDNS responder started Pinche Hugo");
   /*return index page which is stored in serverIndex */
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -97,7 +98,7 @@ void WIFI::connectToWiFi(){
   uint32_t notConnectedCounter = 0;
   EEPROM.begin(32);
   while (WiFi.status() != WL_CONNECTED) {
-    delay(2000);
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
     logger.println("Wifi connecting...");
       
     notConnectedCounter++;
@@ -169,9 +170,9 @@ bool WIFI::isConnected(){
 void WIFI::reconnect(){
   WiFi.begin(ssid, password);
   uint8_t timeout = 0;
-  vTaskDelay( 2000 );
+  vTaskDelay(2000 / portTICK_PERIOD_MS);
   while ( WiFi.status() != WL_CONNECTED ){
-    vTaskDelay( 2000 );
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
     log_i(" waiting on wifi connection" );
     timeout++;
     if (timeout == 2) return;

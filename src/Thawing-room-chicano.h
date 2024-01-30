@@ -2,6 +2,7 @@
 #define THAWING_ROOM_H
 
 #include <Wire.h>
+#include "Stage.h"
 #include <PID_v1.h>
 // #include "secrets.h"
 #include <Arduino.h>
@@ -25,28 +26,42 @@ enum SystemState {
 };
 
 enum SensorProbes{TA_TYPE, TS_TYPE, TC_TYPE};
+enum button_type{NONE, D_START, START, STOP};
 
 //---- Function declaration ----/////////////////////////////////////////////////////////////////////////////
-// float getIRTemp();
-void getTsAvg();
-void publishPID();
+
+void handleStage();
+void setStage(SystemState Stage);
+
 void stopRoutine();
+
+void initStage1();
+void initStage2();
+void initStage3();
+
 void handleStage1();
 void handleStage2();
 void handleStage3();
-void handleInputs();
-bool noButtonPressed();
+
+void idle();
+
+void asyncLoopSprinkler();
+
+void getTsAvg();
 void updateTemperature();
-void aknowledgementRoutine();
-void setStage(SystemState Stage);
-bool shouldStage2Start(DateTime &current_date);
-bool shouldStage3Start(DateTime &current_date);
-void publishTemperatures(DateTime &current_date);
-void sendTemperaturaAlert(float temp, String sensor);
-void callback(char *topic, byte *payload, unsigned int len);  //callback function for mqtt, see definition after loop
-void publishStateChange(const char* topic, int state, const String& message);
+bool handleInputs(button_type override = NONE);
+void callback(char *topic, byte *payload, unsigned int len); 
 bool hasIntervalPassed(uint32_t &previousMillis, uint32_t interval, bool to_min = false);
 bool isValidTemperature(float temp, float minTemp, float maxTemp, const String& sensorName);
+
+void publishPID();
+void onMQTTConnect();
+void aknowledgementRoutine();
+void publishTemperatures(DateTime &current_date);
+void publishStateChange(const char* topic, int state, const String& message);
+
+
+// void sendTemperaturaAlert(float temp, String sensor);
 
 
 //---- timing settings -----////////////////////////////////////////////////////////////////////////////////
@@ -68,4 +83,41 @@ bool isValidTemperature(float temp, float minTemp, float maxTemp, const String& 
 #define TC_DEF -1
 
 
-#endif
+#endif 
+
+/*
+DATA_FOLER:
+- data
+---- config.txt
+---- config_ENSENADA.txt
+---- config_TAIPING.txt
+---- defaultParameters.txt
+---- log.txt
+
+- src
+---- THAWING-ROOM-CHICANO
+
+// Main processes
+-------- handleStage()
+-------- setStage(stage)
+-------- getStep(stage) // This might be not a good idea
+
+// Sub-processes
+-------- stage1(step)
+-------- stage2(step)
+-------- stage3(step)
+
+// Helpers
+-------- hasIntervalPassed(uint32_t &previousMillis, uint32_t interval, bool to_min = false)
+-------- updateTemperatures()
+-------- handleInputs(button_type override)
+-------- isValidTemperature(float temp, float minTemp, float maxTemp, const String& sensorName)
+-------- void getTsAvg();
+
+
+// Communication
+-------- publishStateChange(const char* topic, int state, const String& message)
+-------- publishTemperatures(DateTime &current_date)
+-------- aknowledgementRoutine()
+-------- publishPID()
+*/
