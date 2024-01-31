@@ -138,7 +138,7 @@ void setup() {
 
   controller.setUpWiFi(SECRET_SSID, SECRET_PASS,HOST_NAME);
   controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
-  // controller.setUpRTC();
+  controller.setUpRTC();
 
 
   mqtt.connect(IP_ADDRESS, PORT, USERNAME);
@@ -161,13 +161,13 @@ void setup() {
 void loop() {
   // if is for testing porpuse comment this "if" and replace DateTime "now" for: DateTime now(__DATE__, __TIME__); 
 
-  // if (!controller.isRTCConnected()) {  
-  //   WebSerial.println("RTC not connected"); 
-  //   while (true) delay(1000);
-  // }
+  if (!controller.isRTCConnected()) {  
+    WebSerial.println("RTC not connected"); 
+    while (true) delay(1000);
+  }
 
-  // DateTime now = controller.getDateTime();
-  DateTime now(__DATE__, __TIME__); 
+  DateTime now = controller.getDateTime();
+  // DateTime now(__DATE__, __TIME__); 
 
   // controller.WiFiLoop();
 
