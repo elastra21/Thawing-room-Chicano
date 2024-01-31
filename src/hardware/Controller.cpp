@@ -57,7 +57,7 @@ void Controller::setUpDigitalInputs() {
   //Testing pourpose
   // pinMode(PORT_B0, INPUT_PULLUP);
 
-  for (uint8_t i = 0; i < inputs_size; i++) pinMode(inputs[i], INPUT_PULLUP);
+  for (uint8_t i = 0; i < inputs_size; i++) pinMode(inputs[i], INPUT);
 }
 
 void Controller::setUpAnalogInputs() {

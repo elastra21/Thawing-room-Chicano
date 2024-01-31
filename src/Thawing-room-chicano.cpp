@@ -138,7 +138,7 @@ void setup() {
 
   controller.setUpWiFi(SECRET_SSID, SECRET_PASS,HOST_NAME);
   controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
-  controller.setUpRTC();
+  // controller.setUpRTC();
 
 
   mqtt.connect(IP_ADDRESS, PORT, USERNAME);
@@ -161,13 +161,13 @@ void setup() {
 void loop() {
   // if is for testing porpuse comment this "if" and replace DateTime "now" for: DateTime now(__DATE__, __TIME__); 
 
-  if (!controller.isRTCConnected()) {  
-    WebSerial.println("RTC not connected"); 
-    while (true) delay(1000);
-  }
+  // if (!controller.isRTCConnected()) {  
+  //   WebSerial.println("RTC not connected"); 
+  //   while (true) delay(1000);
+  // }
 
-  DateTime now = controller.getDateTime();
-  // DateTime now(__DATE__, __TIME__); 
+  // DateTime now = controller.getDateTime();
+  DateTime now(__DATE__, __TIME__); 
 
   // controller.WiFiLoop();
 
@@ -476,7 +476,7 @@ void loop() {
     }
 
     // Turn ON S1 when time is over
-    if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_offtime * MINS))) {
+    if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_offtime * MINS))) {   // ===== DONE =====
       controller.writeDigitalOutput(VALVE_IO, HIGH);  // Output of S1
       S1_state = 1;
       WebSerial.println("Stage 2 S1 ON");
@@ -491,7 +491,7 @@ void loop() {
     unsigned long timeElapsed = millis() - S1_stg_2_timer;
     bool timeConditionMet = timeElapsed >= (N_st2.N_s1_st2_ontime * MINS);
 
-    if ((S1_state == 1 || !MTR_State) && timeConditionMet) {
+    if ((S1_state == 1 || !MTR_State) && timeConditionMet) {  // ===== DONE =====
       controller.writeDigitalOutput(VALVE_IO, LOW);  // Output of S1
       S1_state = 0;
       WebSerial.println("Stage 2 S1 OFF");

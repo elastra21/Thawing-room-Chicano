@@ -24,7 +24,7 @@ bool MqttClient::isServiceAvailable() {
   return !no_service_available;
 }
 
-// void MqttClient::reconnect() {
+// void MqttClient::reconnect() {çcççç
 //   while (!mqttClient.connected()) {
 //     WebSerial.print("Attempting MQTT connection...");
 //     if (mqttClient.connect(mqtt_username)) {
@@ -49,6 +49,9 @@ void MqttClient::reconnect() {
       lastReconnectAttempt = now;
 
       if (reconnectAttempts < 5) {
+        // mqttClient.flush();
+        // mqttClient.disconnect();
+        // mqttClient.setServer(mqtt_domain, mqtt_port);
         WebSerial.print("Attempting MQTT connection...");
 
         if (mqttClient.connect(mqtt_username)) {
