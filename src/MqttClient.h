@@ -77,6 +77,8 @@ class MqttClient {
     void publishData(String topic, double value);
     void publishData(String topic, String value);
     void setCallback(std::function<void (char *, uint8_t *, unsigned int)> callback);
+    
+    void DEBUG(const char *message);
   private:
     char mqtt_username[32];  
     bool no_service_available = true;

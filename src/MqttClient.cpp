@@ -12,11 +12,11 @@ void MqttClient::connect(const char *domain, uint16_t port, const char *username
 
   mqttClient.setServer(domain, port);
   if (mqttClient.connect(mqtt_username)) {
-    WebSerial.println("Connection has been established, well done");
+   DEBUG("Connection has been established, well done");
     subscribeRoutine();
     no_service_available = false;
   } else {
-    WebSerial.println("Looks like the server connection failed...");
+    DEBUG("Looks like the server connection failed...");
   }
 }
 
@@ -52,20 +52,18 @@ void MqttClient::reconnect() {
         // mqttClient.flush();
         // mqttClient.disconnect();
         // mqttClient.setServer(mqtt_domain, mqtt_port);
-        WebSerial.print("Attempting MQTT connection...");
+        DEBUG("Attempting MQTT connection...");
 
         if (mqttClient.connect(mqtt_username)) {
-          WebSerial.println("connected");
+          DEBUG("connected");
           subscribeRoutine();
           reconnectAttempts = 0; // Resetear los intentos si la conexión es exitosa
         } else {
-          WebSerial.print("failed, rc=");
-          WebSerial.print(mqttClient.state());
-          WebSerial.println(" try again in 2 minutes");
+          DEBUG(("failed, rc= "+ (String)mqttClient.state() +" try again in 2 minutes").c_str());
           reconnectAttempts++;
         }
       } else {
-        WebSerial.println("Max reconnect attempts reached, try again in 2 minutes");
+        DEBUG("Max reconnect attempts reached, try again in 2 minutes");
         reconnectAttempts = 0; // Resetear los intentos después de alcanzar el máximo
       }
     }
@@ -94,14 +92,14 @@ void MqttClient::setCallback(std::function<void(char *, uint8_t *, unsigned int)
 
 void MqttClient::subscribeRoutine() {
   if (mqttClient.connect(mqtt_username)) {
-    WebSerial.println("connected, subscribing");
-    if (!mqttClient.subscribe(sub_hours, 1)) WebSerial.println("sub hours failed !");
-    if (!mqttClient.subscribe(sub_minutes, 1)) WebSerial.println("sub hours failed !");
-    if (!mqttClient.subscribe(sub_day, 1)) WebSerial.println("sub hours failed !");
-    if (!mqttClient.subscribe(sub_month, 1)) WebSerial.println("sub hours failed !");
-    if (!mqttClient.subscribe(sub_f1_st1_ontime, 1)) WebSerial.println("sub hours failed !");
-    if (!mqttClient.subscribe(sub_f1_st1_offtime, 1)) WebSerial.println("sub hours failed !");
-    if (!mqttClient.subscribe(sub_f1_st2_ontime, 1)) WebSerial.println("sub hours failed !");
+    DEBUG("connected, subscribing");
+    if (!mqttClient.subscribe(sub_hours, 1)) DEBUG("sub hours failed !");
+    if (!mqttClient.subscribe(sub_minutes, 1)) DEBUG("sub hours failed !");
+    if (!mqttClient.subscribe(sub_day, 1)) DEBUG("sub hours failed !");
+    if (!mqttClient.subscribe(sub_month, 1)) DEBUG("sub hours failed !");
+    if (!mqttClient.subscribe(sub_f1_st1_ontime, 1)) DEBUG("sub hours failed !");
+    if (!mqttClient.subscribe(sub_f1_st1_offtime, 1)) DEBUG("sub hours failed !");
+    if (!mqttClient.subscribe(sub_f1_st2_ontime, 1)) DEBUG("sub hours failed !");
     mqttClient.subscribe(sub_f1_st2_offtime, 1);
     mqttClient.subscribe(sub_s1_st2_ontime, 1);
     mqttClient.subscribe(sub_s1_st2_offtime, 1);
@@ -110,7 +108,7 @@ void MqttClient::subscribeRoutine() {
     mqttClient.subscribe(sub_s1_st3_ontime, 1);
     mqttClient.subscribe(sub_s1_st3_offtime, 1);
     mqttClient.subscribe(sub_A, 1);
-    if (!mqttClient.subscribe(sub_B, 1)) WebSerial.println("sub hours failed !");
+    if (!mqttClient.subscribe(sub_B, 1)) DEBUG("sub hours failed !");
     mqttClient.subscribe(sub_P, 1);
     mqttClient.subscribe(sub_I, 1);
     mqttClient.subscribe(sub_D, 1);
@@ -128,8 +126,8 @@ void MqttClient::subscribeRoutine() {
     // mqttClient.subscribe(sub_address2, 1);
     // mqttClient.subscribe(sub_address3, 1);
     // mqttClient.subscribe(sub_address4, 1);
-    WebSerial.println("subscribing done");
-  } else WebSerial.println("not connected, subscribing aborted");
+    DEBUG("subscribing done");
+  } else DEBUG("not connected, subscribing aborted");
 }
 
 void MqttClient::publishData(String topic, double value) {
@@ -155,4 +153,11 @@ bool MqttClient::refreshMQTTStatus() {
 
 bool MqttClient::getConnectionStatus() {
   return last_connection_state;
+}
+
+void MqttClient::DEBUG(const char *message){
+  // concat prefix to the message with the classname
+  char buffer[100];
+  snprintf(buffer, sizeof(buffer), "[MqttClient]: %s", message);
+  WebSerial.println(buffer);
 }

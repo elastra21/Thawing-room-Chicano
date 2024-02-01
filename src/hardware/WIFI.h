@@ -27,6 +27,8 @@ class WIFI {
     bool refreshWiFiStatus();
     bool getConnectionStatus();
     void setUpWebServer(bool brigeSerial = false);
+
+    void DEBUG(const char *message);
   private:
     char ssid[32];  
     char password[64];

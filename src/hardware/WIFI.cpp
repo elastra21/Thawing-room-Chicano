@@ -179,5 +179,11 @@ void WIFI::reconnect(){
   }
 }
 
+void WIFI::DEBUG(const char *message){
+  // concat prefix to the message with the classname
+  char buffer[100];
+  snprintf(buffer, sizeof(buffer), "[WIFI]: %s", message);
+  WebSerial.println(buffer);
+}
 
 
