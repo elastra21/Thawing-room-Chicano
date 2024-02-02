@@ -144,7 +144,7 @@ void setup() {
   mqtt.connect(IP_ADDRESS, PORT, USERNAME);
   mqtt.setCallback(callback);
 
-  // xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
+  xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
   //Turn the PID on
   air_in_feed_PID.SetMode(AUTOMATIC);
   air_in_feed_PID.SetSampleTime(3000);
@@ -169,12 +169,12 @@ void loop() {
   DateTime now = controller.getDateTime();
   // DateTime now(__DATE__, __TIME__); 
 
-  controller.WiFiLoop();
+  // controller.WiFiLoop();
 
-  if(controller.isWiFiConnected()) {
-    mqtt.loop();
-    controller.loopOTA();
-  }
+  // if(controller.isWiFiConnected()) {
+  //   mqtt.loop();
+  //   controller.loopOTA();
+  // }
 
   updateTemperature();
 
