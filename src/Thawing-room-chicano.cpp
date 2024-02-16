@@ -94,6 +94,7 @@ uint32_t F1_stg_3_timer = 0UL;         // F1 stage 3 timing
 uint32_t S1_stg_3_timer = 0UL;         // S1 stage 3 timing
 uint32_t get_temp_timer = 0UL;         // temperature acquisition
 uint32_t ts_avg_timer = 0UL;           // Ts average timing
+uint32_t tc_avg_timer = 0UL;           // Ts average timing
 uint32_t stg_2_pid_timer = 0UL;        // stage 2 PID
 uint32_t turn_on_pid_timer = 0UL;      // stage 2 PID ON
 uint32_t turn_off_pid_timer = 0UL;     // stage 2 PID OFF
@@ -108,10 +109,16 @@ float TI = 0, TI_F = 0;  //Ti optional
 
 // ########################### Buffer ##########################
 float avg_ts = 0.0;              // average surface temperature
-float buffer_sum = 0;            // variable to store the buffer_sum of the received values
-float buffer[BUFFER_SIZE] = {};  // buffer to store the values
-uint8_t buffer_len = 0;
-uint8_t buffer_index = 0;  // buffer index
+float buffer_sum_ts = 0;            // variable to store the buffer_sum of the received values
+float buffer_ts[BUFFER_SIZE] = {};  // buffer to store the values
+uint8_t buffer_len_ts = 0;
+uint8_t buffer_index_ts = 0;  // buffer index
+
+float avg_tc = 0.0;              // average surface temperature
+float buffer_sum_tc = 0;            // variable to store the buffer_sum of the received values
+float buffer_tc[BUFFER_SIZE] = {};  // buffer to store the values
+uint8_t buffer_len_tc = 0;
+uint8_t buffer_index_tc = 0;  // buffer index
 
 MqttClient mqtt;
 Controller controller;
@@ -206,25 +213,49 @@ void loop() {
   }
 
   //---- Get surface temperature average with a FIFO buffer ---- //////////////////////////////// Something fuckin' wrong with the average
+ 
+    // ------------ Average Ts ---------------//
   if (millis() - ts_avg_timer >= AVG_RESOLUTION) {
     
-    if (buffer_len < BUFFER_SIZE) { //if buffer not full, we add the value
-        buffer_sum += TS_F;
-        buffer[buffer_len] = TS_F;
-        buffer_len++;
+    if (buffer_len_ts < BUFFER_SIZE) { //if buffer not full, we add the value
+        buffer_sum_ts += TS_F;
+        buffer_ts[buffer_len_ts] = TS_F;
+        buffer_len_ts++;
       }
       else { //buffer full, we remove the oldest value and add the new one
-        buffer_sum -= buffer[buffer_index];
-        buffer[buffer_index] = TS_F;
-        buffer_sum += TS_F;
-        buffer_index = (buffer_index + 1) % BUFFER_SIZE; // update the buffer index
+        buffer_sum_ts -= buffer_ts[buffer_index_ts];
+        buffer_ts[buffer_index_ts] = TS_F;
+        buffer_sum_ts += TS_F;
+        buffer_index_ts = (buffer_index_ts + 1) % BUFFER_SIZE; // update the buffer index
       }
 
-      avg_ts = buffer_sum/buffer_len;
+      avg_ts = buffer_sum_ts/buffer_len_ts;
 
     mqtt.publishData(AVG_TS_TOPIC, temp_data.AvgTs_N);
     // WebSerial.println("Temp data published");
     ts_avg_timer = millis();
+  }
+
+      // ------------ Average Tc ---------------//
+    if (millis() - tc_avg_timer >= AVG_RESOLUTION) {
+    
+    if (buffer_len_tc < BUFFER_SIZE) { //if buffer not full, we add the value
+        buffer_sum_tc += TC_F;
+        buffer_tc[buffer_len_tc] = TC_F;
+        buffer_len_tc++;
+      }
+      else { //buffer full, we remove the oldest value and add the new one
+        buffer_sum_tc -= buffer_tc[buffer_index_tc];
+        buffer_tc[buffer_index_tc] = TC_F;
+        buffer_sum_tc += TC_F;
+        buffer_index_tc = (buffer_index_tc + 1) % BUFFER_SIZE; // update the buffer index
+      }
+
+      avg_tc = buffer_sum_tc/buffer_len_tc;
+
+    mqtt.publishData(AVG_TC_TOPIC, temp_data.AvgTc_N);
+    // WebSerial.println("Temp data published");
+    tc_avg_timer = millis();
   }
 
   //---- Temperature MQTT publish ----///////////////////////////////////////////////////////////
@@ -234,6 +265,7 @@ void loop() {
     temp_data.Tc_N = TC_F;
     temp_data.Ti_N = TI_F;
     temp_data.AvgTs_N = avg_ts;
+    temp_data.AvgTc_N = avg_tc;
 
     mqtt.publishData(TA_TOPIC, temp_data.Ta_N);
     mqtt.publishData(TS_TOPIC, temp_data.Ts_N);
@@ -565,7 +597,7 @@ void loop() {
 
   //---- STAGE 3 ----////////////////////////////////////////////////////////////////////////////
   // Initialisation Stage3 (reset all the other stages to 0)
-  if (TS_F >= N_tset.N_ts_set && TC_F >= N_tset.N_tc_set && Stage3_started == 0 && Stage2_started == 1) {
+  if (avg_ts >= N_tset.N_ts_set && avg_tc >= N_tset.N_tc_set && Stage3_started == 0 && Stage2_started == 1) {
     START1 = START2 = Stage2_RTC_set = MTR_State = 0;
 
     // Turn All Output OFF
