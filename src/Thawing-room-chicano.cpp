@@ -108,17 +108,8 @@ float TC = 0, TC_F = 0;  //Tc
 float TI = 0, TI_F = 0;  //Ti optional
 
 // ########################### Buffer ##########################
-float avg_ts = 0.0;              // average surface temperature
-float buffer_sum_ts = 0;            // variable to store the buffer_sum of the received values
-float buffer_ts[BUFFER_SIZE] = {};  // buffer to store the values
-uint8_t buffer_len_ts = 0;
-uint8_t buffer_index_ts = 0;  // buffer index
-
-float avg_tc = 0.0;              // average surface temperature
-float buffer_sum_tc = 0;            // variable to store the buffer_sum of the received values
-float buffer_tc[BUFFER_SIZE] = {};  // buffer to store the values
-uint8_t buffer_len_tc = 0;
-uint8_t buffer_index_tc = 0;  // buffer index
+SensorBuffer sensorTs(BUFFER_SIZE);  // Crear una instancia para el sensor Ts
+SensorBuffer sensorTc(BUFFER_SIZE);  // Crear otra instancia para el sensor Tc
 
 MqttClient mqtt;
 Controller controller;
@@ -217,19 +208,7 @@ void loop() {
     // ------------ Average Ts ---------------//
   if (millis() - ts_avg_timer >= AVG_RESOLUTION) {
     
-    if (buffer_len_ts < BUFFER_SIZE) { //if buffer not full, we add the value
-        buffer_sum_ts += TS_F;
-        buffer_ts[buffer_len_ts] = TS_F;
-        buffer_len_ts++;
-      }
-      else { //buffer full, we remove the oldest value and add the new one
-        buffer_sum_ts -= buffer_ts[buffer_index_ts];
-        buffer_ts[buffer_index_ts] = TS_F;
-        buffer_sum_ts += TS_F;
-        buffer_index_ts = (buffer_index_ts + 1) % BUFFER_SIZE; // update the buffer index
-      }
-
-      avg_ts = buffer_sum_ts/buffer_len_ts;
+    sensorTs.addValue(TS_F); // Añadir el valor al buffer de Ts
 
     mqtt.publishData(AVG_TS_TOPIC, temp_data.AvgTs_N);
     // WebSerial.println("Temp data published");
@@ -239,19 +218,7 @@ void loop() {
       // ------------ Average Tc ---------------//
     if (millis() - tc_avg_timer >= AVG_RESOLUTION) {
     
-    if (buffer_len_tc < BUFFER_SIZE) { //if buffer not full, we add the value
-        buffer_sum_tc += TC_F;
-        buffer_tc[buffer_len_tc] = TC_F;
-        buffer_len_tc++;
-      }
-      else { //buffer full, we remove the oldest value and add the new one
-        buffer_sum_tc -= buffer_tc[buffer_index_tc];
-        buffer_tc[buffer_index_tc] = TC_F;
-        buffer_sum_tc += TC_F;
-        buffer_index_tc = (buffer_index_tc + 1) % BUFFER_SIZE; // update the buffer index
-      }
-
-      avg_tc = buffer_sum_tc/buffer_len_tc;
+    sensorTc.addValue(TC_F);
 
     mqtt.publishData(AVG_TC_TOPIC, temp_data.AvgTc_N);
     // WebSerial.println("Temp data published");
@@ -264,8 +231,8 @@ void loop() {
     temp_data.Ts_N = TS_F;
     temp_data.Tc_N = TC_F;
     temp_data.Ti_N = TI_F;
-    temp_data.AvgTs_N = avg_ts;
-    temp_data.AvgTc_N = avg_tc;
+    temp_data.AvgTs_N = sensorTs.getAverage();;
+    temp_data.AvgTc_N = sensorTc.getAverage();;
 
     mqtt.publishData(TA_TOPIC, temp_data.Ta_N);
     mqtt.publishData(TS_TOPIC, temp_data.Ts_N);
@@ -602,7 +569,7 @@ void loop() {
 
   //---- STAGE 3 ----////////////////////////////////////////////////////////////////////////////
   // Initialisation Stage3 (reset all the other stages to 0)
-  if (avg_ts >= N_tset.N_ts_set && avg_tc >= N_tset.N_tc_set && Stage3_started == 0 && Stage2_started == 1) {
+  if (sensorTs.getAverage() >= N_tset.N_ts_set && sensorTc.getAverage() >= N_tset.N_tc_set && Stage3_started == 0 && Stage2_started == 1) {
     START1 = START2 = Stage2_RTC_set = MTR_State = 0;
 
     // Turn All Output OFF

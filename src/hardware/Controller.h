@@ -10,6 +10,7 @@
 #include <Arduino.h>
 #include <OneWire.h>
 #include <NTPClient.h>
+#include "SensorBuffer.h"
 #include <DallasTemperature.h>
 
 // #define WebSerial Serial
