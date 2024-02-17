@@ -14,6 +14,7 @@
 #include <OneWire.h>
 #include <NTPClient.h>
 #include <ArduinoJson.h>
+#include "SensorBuffer.h"
 #include <DallasTemperature.h>
 
 #define TEMPERATURE_MIN  -50 // Minimum temperature value (in Celsius)

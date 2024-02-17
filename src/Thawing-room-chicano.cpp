@@ -79,11 +79,8 @@ float TC = 0, TC_F = 0;  //Tc
 float TI = 0, TI_F = 0;  //Ti optional
 
 // ########################### Buffer ##########################
-float avg_ts = 0.0;              // average surface temperature
-float buffer_sum = 0;            // variable to store the buffer_sum of the received values
-float buffer[BUFFER_SIZE] = {};  // buffer to store the values
-uint8_t buffer_len = 0;
-uint8_t buffer_index = 0;  // buffer index
+SensorBuffer sensorTs(BUFFER_SIZE);  // Crear una instancia para el sensor Ts
+SensorBuffer sensorTc(BUFFER_SIZE);  // Crear otra instancia para el sensor Tc
 
 SystemState currentState = IDLE;
 
@@ -686,22 +683,12 @@ void aknowledgementRoutine(){
 }
 
 void getTsAvg() {
-  // if (millis() - ts_avg_timer >= AVG_RESOLUTION)
-  if (buffer_len < BUFFER_SIZE) { //if buffer not full, we add the value
-      buffer_sum += TS_F;
-      buffer[buffer_len] = TS_F;
-      buffer_len++;
-    }
-    else { //buffer full, we remove the oldest value and add the new one
-      buffer_sum -= buffer[buffer_index];
-      buffer[buffer_index] = TS_F;
-      buffer_sum += TS_F;
-      buffer_index = (buffer_index + 1) % BUFFER_SIZE; // update the buffer index
-    }
-    
-    avg_ts = buffer_sum/buffer_len;
+  sensorTs.addValue(TS_F); // Añadir el valor al buffer de Ts
+  sensorTc.addValue(TC_F);
 
   mqtt.publishData(AVG_TS_TOPIC, temp_data.avg_ts);
+  mqtt.publishData(AVG_TC_TOPIC, temp_data.avg_tc);
+
 }
 
 void publishPID(){
@@ -720,7 +707,9 @@ void publishTemperatures(DateTime &current_date) {
   temp_data.ts = TS_F;
   temp_data.tc = TC_F;
   temp_data.ti = TI_F;
-  temp_data.avg_ts = avg_ts;
+  temp_data.avg_ts = sensorTs.getAverage();
+  temp_data.avg_tc = sensorTc.getAverage();
+
 
   mqtt.publishData(TA_TOPIC, temp_data.ta);
   mqtt.publishData(TS_TOPIC, temp_data.ts);
@@ -808,7 +797,6 @@ void onMQTTConnect() {
   mqtt.publishData(m_F2, fan_2);
   mqtt.publishData(m_S1, sprinkler_1);
   mqtt.publishData(STAGE, currentState);
-  mqtt.publishData(AVG_TS_TOPIC, avg_ts);
   mqtt.publishData(TA_TOPIC, TA);
   mqtt.publishData(TS_TOPIC, TS);
   mqtt.publishData(TC_TOPIC, TC);

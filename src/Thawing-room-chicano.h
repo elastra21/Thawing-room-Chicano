@@ -14,7 +14,7 @@
 //------------ structure definitions an flags -------------------------------------------------------->
 
 // temperature measures
-typedef struct { float ta; float ts; float tc; float ti; float avg_ts; } data_s;
+typedef struct { float ta; float ts; float tc; float ti; float avg_ts; float avg_tc; } data_s;
 
 
 enum SystemState {
