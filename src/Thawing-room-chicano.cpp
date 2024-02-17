@@ -307,6 +307,11 @@ void loop() {
 
   //---- Time Stage ON/OFF and A & B MQTT Publish ----///////////////////////////////////////////////////////
   if (millis() - A_B_timer >= 10000) {
+    mqtt.publishData(STAGE, stage_data.stage);
+    mqtt.publishData(m_F1, F1_data.M_F1);
+    // mqtt.publishData(m_F2, fan_2);
+    mqtt.publishData(m_S1, S1_data.M_S1);
+    mqtt.publishData(PID_OUTPUT, coefOutput);
     // STAGE 1
     mqtt.publishData(ACK_F1_ST1_ONTIME, N_st1.N_f1_st1_ontime);
     mqtt.publishData(ACK_F1_ST1_OFFTIME, N_st1.N_f1_st1_offtime);
