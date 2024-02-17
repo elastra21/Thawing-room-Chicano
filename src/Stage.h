@@ -15,11 +15,12 @@ public:
     Stage(uint8_t no_stages, std::function<void ()> callback_init = NULL, std::function<void ()> callback_destroy = NULL);
 
     void init();
+    void destroy();
     void nextStep();
     bool isInitialized();
-    uint8_t getCurrentStep();
     uint8_t getNoStages();
-    void destroy();
+    uint8_t getCurrentStep();
+    void setStep(uint8_t step);
 };
 
 #endif // STAGE_H

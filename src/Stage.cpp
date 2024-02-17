@@ -23,6 +23,10 @@ bool Stage::isInitialized() {
     return this->current_step != 0;
 }
 
+void Stage::setStep(uint8_t step) {
+    this->current_step = step;
+}
+
 uint8_t Stage::getCurrentStep() {
     return this->current_step;
 }

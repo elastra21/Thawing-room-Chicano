@@ -45,7 +45,7 @@ void handleStage3();
 
 void idle();
 
-void asyncLoopSprinkler();
+void asyncLoopSprinkler(bool sprinkler_time_to_ON, bool sprinkler_time_to_OFF);
 
 void getTsAvg();
 void updateTemperature();

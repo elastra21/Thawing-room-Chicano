@@ -60,6 +60,7 @@ uint32_t fan_1_timer = 0UL;               // fan F1 timing
 uint32_t pid_computing_timer = 0UL;    // PID computing timing
 uint32_t fan_1_stg_2_timmer = 0UL;        // F1 stage 2 timing
 uint32_t fan_2_stg_2_timmer = 0UL;        // F1 stage 2 timing
+uint32_t sprinkler_1_stg_1_timer = 0UL;         // S1 stage 2 timing
 uint32_t sprinkler_1_stg_2_timer = 0UL;         // S1 stage 2 timing
 uint32_t fan_1_stg_3_timer = 0UL;         // F1 stage 3 timing
 uint32_t sprinkler_1_stg_3_timer = 0UL;         // S1 stage 3 timing
@@ -131,6 +132,8 @@ void setup() {
 
   xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
 
+  logger.println("===========> Reboted!! <===========");
+
   //Turn the PID on
   air_in_feed_PID.SetMode(AUTOMATIC);
   air_in_feed_PID.SetSampleTime(3000);
@@ -168,13 +171,13 @@ bool handleInputs(button_type override) {
 
   if (override) pressed_btn = button = override;
 
-  if (controller.readDigitalInput(DLY_S_IO)) button = D_START;
+  if      (controller.readDigitalInput(DLY_S_IO)) button = D_START;
   else if (controller.readDigitalInput(START_IO)) button = START;
-  else if (controller.readDigitalInput(STOP_IO)) button = STOP;
+  else if (controller.readDigitalInput(STOP_IO))  button = STOP;
 
-  if (button == D_START) setStage(STAGE1);
-  else if (button == START) setStage(STAGE2);
-  else if (button == STOP) stopRoutine(); 
+  if      (button == D_START) setStage(STAGE1);
+  else if (button == START)   setStage(STAGE2);
+  else if (button == STOP)    stopRoutine(); 
 
   return !pressed_btn;
 }
@@ -191,16 +194,19 @@ void handleStage(){
 void handleStage1(){
   logger.println("STAGE #1, current step:" + String(stage_1.getCurrentStep()));
 
+  bool sprinkler_time_to_ON = hasIntervalPassed(sprinkler_1_stg_1_timer,stage1_params.sprinklerOffTime, true);
+  bool sprinkler_time_to_OFF = hasIntervalPassed(sprinkler_1_stg_1_timer,stage1_params.sprinklerOnTime, true);
+  asyncLoopSprinkler(sprinkler_time_to_ON, sprinkler_time_to_OFF);
+
   // Init stage 1
   if (stage_1.getCurrentStep() == 0) {
     stage_1.init();
     stage_1.nextStep();
-    delay(5000);
   }
+  
   // Step #1
   else if (stage_1.getCurrentStep() == 1){
-      // Turn ON F1
-    if (!mtr_state && !controller.readDigitalInput(FAN_IO) && hasIntervalPassed(fan_1_timer, stage1_params.fanOffTime , true)) {
+    if (!mtr_state && !controller.readDigitalInput(FAN_IO)){
       controller.writeDigitalOutput(FAN_IO, HIGH);                                                                                       // Turn ON F1
       logger.println("Stage 1 F1 On");
       mtr_state = true;
@@ -209,22 +215,51 @@ void handleStage1(){
       publishStateChange(m_F1, fan_1, "Stage 1 init M_F1 ON published ");
     }
 
+    else if (hasIntervalPassed(fan_1_timer, stage1_params.fanOffTime , true)) stage_1.nextStep();
+     
+  }
+
+  // Step #2
+  else if (stage_1.getCurrentStep() == 2 ){
     // Turn OFF F1 when the time set in the configuration is over
-    if (mtr_state && controller.readDigitalInput(FAN_IO) && hasIntervalPassed(fan_1_timer, stage1_params.fanOnTime , true)) {
+    if (mtr_state && controller.readDigitalInput(FAN_IO)) {
       controller.writeDigitalOutput(FAN_IO, LOW);
-      // controller.writeAnalogOutput(AIR_PWM, 0);
       logger.println("Stage 1 F1 Off");
       mtr_state = false;
       fan_1 = 2;  // When M_F1 = 2 ==> OFF
 
       publishStateChange(m_F1, fan_1, "Stage 1 init M_F1 OFF published ");
-    }  
+    }
 
+    else if (hasIntervalPassed(fan_1_timer, stage1_params.fanOnTime, true)) stage_1.nextStep();
   }
 
-  // Step #2
-  else if (stage_1.getCurrentStep() == 2 ){
+  // Step #3
+  else if (stage_1.getCurrentStep() == 3){
+    if (!mtr_state && !controller.readDigitalInput(FAN_IO)){
+      controller.writeDigitalOutput(FAN_IO, HIGH);                                                                                       // Turn ON F1
+      logger.println("Stage 1 F1 On");
+      mtr_state = true;
+      fan_1 = 1;  // When M_F1 = 1 ==> ON !!!!!!!!!!!! SHOULD BE CCW
 
+      publishStateChange(m_F1, fan_1, "Stage 1 init M_F1 ON published ");
+    }
+
+    else if (hasIntervalPassed(fan_1_timer, stage1_params.fanOffTime , true)) stage_1.nextStep();
+  }
+
+  // Step #4
+  else if (stage_1.getCurrentStep() == 4){
+    if (mtr_state && controller.readDigitalInput(FAN_IO)) {
+      controller.writeDigitalOutput(FAN_IO, LOW);
+      logger.println("Stage 1 F1 Off");
+      mtr_state = false;
+      fan_1 = 2;  // When M_F1 = 2 ==> OFF
+
+      publishStateChange(m_F1, fan_1, "Stage 1 init M_F1 OFF published ");
+    }
+
+    else if (hasIntervalPassed(fan_1_timer, stage1_params.fanOnTime, true)) stage_1.setStep(1);
   }
 
   DateTime current_date(__DATE__, __TIME__); 
@@ -243,7 +278,9 @@ void handleStage2(){
   logger.println("STAGE #2, current step:" + String(stage_2.getCurrentStep()));
 
   // Loop of async process
-  asyncLoopSprinkler();
+  bool sprinkler_time_to_ON = hasIntervalPassed(sprinkler_1_stg_2_timer,stage2_params.sprinklerOffTime, true);
+  bool sprinkler_time_to_OFF = hasIntervalPassed(sprinkler_1_stg_2_timer,stage2_params.sprinklerOnTime, true);
+  asyncLoopSprinkler(sprinkler_time_to_ON, sprinkler_time_to_OFF);
 
   // Init stage 2
   if (stage_2.getCurrentStep() == 0) {
@@ -261,7 +298,7 @@ void handleStage2(){
       fan_1 = 1;  // When M_F1 = 1 ==> ON
 
       publishStateChange(m_F1, fan_1, "Stage 2 F1 Start published ");
-  }
+    }
 
     // Turn OFF F1 when time is over
     if (mtr_state && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true) ){
@@ -275,38 +312,37 @@ void handleStage2(){
 
     // Calculate the Setpoint every 3 seconds in Function of Ta with the formula : Setpoint = A*(B-Ta)
     if (hasIntervalPassed(pid_computing_timer, 3000)) {
-    Setpoint = (-(room.A * (temp_data.avg_ts)) + room.B);  //use the average of the temperature over the x last minuites
-    pid_setpoint = float(Setpoint);
+      Setpoint = (-(room.A * (temp_data.avg_ts)) + room.B);  //use the average of the temperature over the x last minuites
+      pid_setpoint = float(Setpoint);
 
-    mqtt.publishData(SETPOINT, pid_setpoint);
+      mqtt.publishData(SETPOINT, pid_setpoint);
 
-    logger.println("Setpoint published");
-  }
+      logger.println("Setpoint published");
+    }
 
     // Activate the PID when F1 ON
     if (mtr_state && hasIntervalPassed(turn_on_pid_timer, 3000)) {
-    pid_input = TA_F;
-    coef_output = (coef_pid * Output) / 100;  // Transform the Output of the PID to the desired max value
-    logger.println(String(coef_output));
-    air_in_feed_PID.Compute();
-    // analogWrite(A0_5, Output);
-    controller.writeAnalogOutput(AIR_PWM, Output);
-    Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
-    logger.println("Converted_Output is " + String(Converted_Output));
-  }
+      pid_input = TA_F;
+      coef_output = (coef_pid * Output) / 100;  // Transform the Output of the PID to the desired max value
+      logger.println(String(coef_output));
+      air_in_feed_PID.Compute();
+      // analogWrite(A0_5, Output);
+      controller.writeAnalogOutput(AIR_PWM, Output);
+      Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
+      logger.println("Converted_Output is " + String(Converted_Output));
+    }
 
     // Put the PID at 0 when F1 OFF
     if (!mtr_state && hasIntervalPassed(turn_off_pid_timer, 3000)) {
-    //Setpoint = 0;
-    pid_input = 0;
-    Output = 0;
-    coef_output = 0;
-    // analogWrite(A0_5, Output);
-    controller.writeAnalogOutput(AIR_PWM, Output);
-    Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
-    logger.println("Converted_Output is " + String(Converted_Output));
-  }
-    
+      //Setpoint = 0;
+      pid_input = 0;
+      Output = 0;
+      coef_output = 0;
+      // analogWrite(A0_5, Output);
+      controller.writeAnalogOutput(AIR_PWM, Output);
+      Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
+      logger.println("Converted_Output is " + String(Converted_Output));
+    }
   }
 
   // Step #2
@@ -327,7 +363,9 @@ void handleStage3(){
   logger.println("STAGE #3, current step:" + String(stage_3.getCurrentStep()));
 
   // Loop of async process
-  asyncLoopSprinkler();
+  bool sprinkler_time_to_ON = hasIntervalPassed(sprinkler_1_stg_3_timer,stage3_params.sprinklerOffTime, true);
+  bool sprinkler_time_to_OFF = hasIntervalPassed(sprinkler_1_stg_3_timer,stage3_params.sprinklerOnTime, true);
+  asyncLoopSprinkler(sprinkler_time_to_ON, sprinkler_time_to_OFF);
 
   // Init stage 3
   if (stage_3.getCurrentStep() == 0) {
@@ -806,10 +844,7 @@ void initStage3(){
   fan_1_stg_3_timer = millis() - (stage3_params.fanOffTime * MINS);
 }
 
-void asyncLoopSprinkler(){
-  bool sprinkler_time_to_ON = hasIntervalPassed(sprinkler_1_stg_2_timer,stage2_params.sprinklerOffTime, true);
-  bool sprinkler_time_to_OFF = hasIntervalPassed(sprinkler_1_stg_2_timer,stage2_params.sprinklerOnTime, true);
-
+void asyncLoopSprinkler(bool sprinkler_time_to_ON, bool sprinkler_time_to_OFF){
   // Should ON the Sprinkler
   if (mtr_state && !sprinkler_1_state && sprinkler_time_to_ON) {    
     controller.writeDigitalOutput(VALVE_IO, HIGH);  // Output of S1
