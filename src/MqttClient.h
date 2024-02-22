@@ -42,6 +42,7 @@
 #define STAGE               "mfp2/stage"
 #define AVG_TS_TOPIC        "mfp2/AvgTs"
 #define AVG_TC_TOPIC        "mfp2/AvgTc"
+#define AVG_TA_TOPIC        "mfp2/AvgTa"
 #define TA_TOPIC            "mfp2/Ta"
 #define TS_TOPIC            "mfp2/Ts"
 #define TC_TOPIC            "mfp2/Tc"

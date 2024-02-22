@@ -93,8 +93,7 @@ uint32_t S1_stg_2_timer = 0UL;         // S1 stage 2 timing
 uint32_t F1_stg_3_timer = 0UL;         // F1 stage 3 timing
 uint32_t S1_stg_3_timer = 0UL;         // S1 stage 3 timing
 uint32_t get_temp_timer = 0UL;         // temperature acquisition
-uint32_t ts_avg_timer = 0UL;           // Ts average timing
-uint32_t tc_avg_timer = 0UL;           // Ts average timing
+uint32_t temp_avg_timer = 0UL;           // Ts average timing
 uint32_t stg_2_pid_timer = 0UL;        // stage 2 PID
 uint32_t turn_on_pid_timer = 0UL;      // stage 2 PID ON
 uint32_t turn_off_pid_timer = 0UL;     // stage 2 PID OFF
@@ -110,6 +109,7 @@ float TI = 0, TI_F = 0;  //Ti optional
 // ########################### Buffer ##########################
 SensorBuffer sensorTs(BUFFER_SIZE);  // Crear una instancia para el sensor Ts
 SensorBuffer sensorTc(BUFFER_SIZE);  // Crear otra instancia para el sensor Tc
+SensorBuffer sensorTa(BUFFER_SIZE_TA); // Ta with a Buffer of
 
 MqttClient mqtt;
 Controller controller;
@@ -206,23 +206,17 @@ void loop() {
   //---- Get surface temperature average with a FIFO buffer ---- //////////////////////////////// Something fuckin' wrong with the average
  
     // ------------ Average Ts ---------------//
-  if (millis() - ts_avg_timer >= AVG_RESOLUTION) {
+  if (millis() - temp_avg_timer >= AVG_RESOLUTION) {
     
     sensorTs.addValue(TS_F); // Añadir el valor al buffer de Ts
+    sensorTc.addValue(TC_F);
+    sensorTa.addValue(TA_F);
 
     mqtt.publishData(AVG_TS_TOPIC, temp_data.AvgTs_N);
-    // WebSerial.println("Temp data published");
-    ts_avg_timer = millis();
-  }
-
-      // ------------ Average Tc ---------------//
-    if (millis() - tc_avg_timer >= AVG_RESOLUTION) {
-    
-    sensorTc.addValue(TC_F);
-
     mqtt.publishData(AVG_TC_TOPIC, temp_data.AvgTc_N);
-    // WebSerial.println("Temp data published");
-    tc_avg_timer = millis();
+    mqtt.publishData(AVG_TA_TOPIC, temp_data.AvgTa_N);
+
+    temp_avg_timer = millis();
   }
 
   //---- Temperature MQTT publish ----///////////////////////////////////////////////////////////
@@ -231,8 +225,9 @@ void loop() {
     temp_data.Ts_N = TS_F;
     temp_data.Tc_N = TC_F;
     temp_data.Ti_N = TI_F;
-    temp_data.AvgTs_N = sensorTs.getAverage();;
-    temp_data.AvgTc_N = sensorTc.getAverage();;
+    temp_data.AvgTs_N = sensorTs.getAverage();
+    temp_data.AvgTc_N = sensorTc.getAverage();
+    temp_data.AvgTa_N = sensorTa.getAverage();
 
     mqtt.publishData(TA_TOPIC, temp_data.Ta_N);
     mqtt.publishData(TS_TOPIC, temp_data.Ts_N);
@@ -520,7 +515,7 @@ void loop() {
 
     // Activate the PID when F1 ON
     if (MTR_State && (millis() - turn_on_pid_timer >= 3000)) {
-      PIDinput = TA_F;
+      PIDinput = sensorTa.getAverage();
       coefOutput = (coefPID * Output) / 100;
       WebSerial.println(coefOutput);
       air_in_feed_PID.Compute();

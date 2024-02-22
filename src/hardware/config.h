@@ -40,6 +40,7 @@
 #define TI_AI       PORT_C2
 
 #define BUFFER_SIZE 60 
+#define BUFFER_SIZE_TA 20
 
 // Temperature Sensors settings          -------------------------------------------------------------------->
 #define ONE_WIRE_BUS 13// Data wire is plugged into port 2 on the Arduin

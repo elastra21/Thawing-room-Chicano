@@ -50,7 +50,7 @@ typedef struct { float N_f1_st1_ontime; float N_f1_st1_offtime; }               
 typedef struct { float N_hours; float N_minutes; float N_day; float N_month; }    data_rtc;
 
 // temperature measures
-typedef struct { float Ta_N; float Ts_N; float Tc_N; float Ti_N; float AvgTs_N; float AvgTc_N; } data_s;
+typedef struct { float Ta_N; float Ts_N; float Tc_N; float Ti_N; float AvgTs_N; float AvgTc_N; float AvgTa_N; } data_s;
 
 
 // fan (F1) and sprinklers (S1) STAGE 2 on and off time 
