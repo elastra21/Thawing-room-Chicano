@@ -25,7 +25,8 @@ void Controller::init() {
 
 void Controller::setUpLogger() {
   #ifdef WebSerial
-    DEBUG(115200);
+    // DEBUG(115200);
+    Serial.begin(115200);
     DEBUG("Logger set up");
   #endif
 }

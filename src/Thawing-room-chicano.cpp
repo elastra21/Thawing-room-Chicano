@@ -139,7 +139,7 @@ void setup() {
   controller.setUpRTC();
 
 
-  mqtt.connect(IP_ADDRESS, PORT, USERNAME);
+  mqtt.connect(IP_ADDRESS, PORT, MQTT_ID, USERNAME, PASS);
   mqtt.setCallback(callback);
 
   // xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);

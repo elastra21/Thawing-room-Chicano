@@ -4,6 +4,8 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 
+#define MQTT_USERNAME_SIZE 32
+
 //             subscribe topics    -------------------------------------------------------------------->
 #define sub_hours           "mfp2/hours"
 #define sub_minutes         "mfp2/minutes"
@@ -69,7 +71,7 @@
 class MqttClient {
   public:
     void loop();
-    void connect(const char *domain, uint16_t port, const char *username);
+    void connect(const char *domain, uint16_t port, const char *id, const char *username, const char *password);
     void reconnect();
     bool isConnected();
     void subscribeRoutine();
@@ -82,7 +84,9 @@ class MqttClient {
     
     void DEBUG(const char *message);
   private:
-    char mqtt_username[32];  
+    char mqtt_id[MQTT_USERNAME_SIZE];  
+    char mqtt_username[MQTT_USERNAME_SIZE];
+    char mqtt_password[MQTT_USERNAME_SIZE];
     bool no_service_available = true;
     bool last_connection_state = false;
 
