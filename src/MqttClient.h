@@ -6,6 +6,9 @@
 #include <WiFiClientSecure.h>
 
 #define MQTT_USERNAME_SIZE 32
+#define MQTT_ID_SIZE 32
+#define MQTT_PASSWORD_SIZE 32
+#define PREFIX_SIZE 32
 
 //             subscribe topics    -------------------------------------------------------------------->
 #define sub_hours           "mfp2/hours"
@@ -40,11 +43,13 @@
 
 //------------ publish index    -------------------------------------------------------------------->
 #define m_F1                "mfp2/M_F1"
+#define m_F1_CCW            "mfp2/M_F1_CCW"
 #define m_F2                "mfp2/M_F2"
 #define m_S1                "mfp2/M_S1"
 #define STAGE               "mfp2/stage"
 #define AVG_TS_TOPIC        "mfp2/AvgTs"
 #define AVG_TC_TOPIC        "mfp2/AvgTc"
+#define AVG_TA_TOPIC        "mfp2/AvgTa"
 #define TA_TOPIC            "mfp2/Ta"
 #define TS_TOPIC            "mfp2/Ts"
 #define TC_TOPIC            "mfp2/Tc"
@@ -72,7 +77,7 @@
 class MqttClient {
   public:
     void loop();
-    void connect(const char *domain, uint16_t port, const char *username);
+    void connect(const char *domain, uint16_t port, const char *id, const char *username, const char *password);
     void reconnect();
     bool isConnected();
     void subscribeRoutine();
@@ -89,9 +94,12 @@ class MqttClient {
     // void publishEcava(const String* topics, const String* values, int arraySize, const char* mqttTopic);
     // String getIsoTimestamp();
     // void exampleCall();
+    void DEBUG(const char *message);
   private:
     uint16_t mqtt_port;
+    char mqtt_id[MQTT_USERNAME_SIZE];
     char mqtt_username[MQTT_USERNAME_SIZE];  
+    char mqtt_password[MQTT_USERNAME_SIZE];
     char mqtt_domain[MQTT_USERNAME_SIZE];
     bool no_service_available = true;
     bool last_connection_state = false;

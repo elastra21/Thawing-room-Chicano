@@ -1,8 +1,8 @@
 #include "Stage.h"
 #include "hardware/Logger.h"
 
-Stage::Stage(uint8_t no_stages, std::function<void ()> callback_init, std::function<void ()> callback_destroy) {
-    this->no_stages = no_stages;
+Stage::Stage(uint8_t no_steps, std::function<void ()> callback_init, std::function<void ()> callback_destroy) {
+    this->no_steps = no_steps;
     this->callback_init = callback_init;
     this->callback_destroy = callback_destroy;
 }
@@ -17,6 +17,7 @@ void Stage::init() {
 void Stage::nextStep() {
     this->current_step++;
     // logger.println("Next step: " + String(this->current_step) + "/" + String(this->no_stages));
+    DEBUG(("Current step: "+String(this->current_step)).c_str());
 }
 
 bool Stage::isInitialized() {
@@ -31,8 +32,8 @@ uint8_t Stage::getCurrentStep() {
     return this->current_step;
 }
 
-uint8_t Stage::getNoStages() {
-    return this->no_stages;
+uint8_t Stage::getNoStep() {
+    return this->no_steps;
 }
 
 void Stage::destroy() {
@@ -40,6 +41,12 @@ void Stage::destroy() {
         this->callback_destroy();
     }
     this->current_step = 0;
+}
+
+void Stage::DEBUG(const char *message) {
+    char buffer[100];
+    snprintf(buffer, sizeof(buffer), "[Stage]: %s", message);
+    logger.println(buffer);
 }
 
 // Compare this snippet from src/Stage.cpp:

@@ -4,6 +4,7 @@
 #include <FS.h>
 #include "WIFI.h"
 #include <Wire.h>
+#include "MqttClient.h"
 #include <WS_V2.h>
 #include "config.h"
 #include "Logger.h"
@@ -15,6 +16,7 @@
 #include <NTPClient.h>
 #include <ArduinoJson.h>
 #include "SensorBuffer.h"
+#include <Adafruit_MLX90640.h>
 #include <DallasTemperature.h>
 
 #define TEMPERATURE_MIN  -50 // Minimum temperature value (in Celsius)
@@ -24,9 +26,8 @@
 
 #define SECS_IN_HR 3600
 
-// #define TIME_ZONE_OFFSET_HRS            (-7)  /* Ensenada, México */
-#define TIME_ZONE_OFFSET_HRS            (+8)   /* Taiping, Malaysia */
-
+#define TIME_ZONE_OFFSET_HRS            (-7)  /* Ensenada, México */
+// #define TIME_ZONE_OFFSET_HRS            (+8)   /* Taiping, Malaysia */
 typedef struct {
     float fanOnTime;
     float fanOffTime;
@@ -43,7 +44,8 @@ typedef struct { float ts; float tc; }        data_tset;
 class Controller {
 private:
     WIFI wifi;
-    RTC_DS3231 rtc;
+    bool ir_ts = false;
+    int ARRAY_SIZE = 7;
 
     void setUpI2C();
     void setUpIOS();
@@ -52,6 +54,14 @@ private:
     void setUpAnalogOutputs();
     void setUpDigitalInputs();
     void setUpDigitalOutputs();
+
+//  IR Tc Stuff
+    void setUpIRTc();
+    float getMinTemp(float *temps);
+    float getMaxTemp(float *temps);
+    float getAvgBottomTemp(float *temps);
+    void checkAndInsertBottomTemps(float temp, float *temps);
+
 public:
     ~Controller();
     Controller(/* args */);
@@ -63,7 +73,9 @@ public:
 
     void init();
     void setUpRTC();
+    float getIRTemp();
     bool isRTCConnected();
+    bool isTsContactLess();
     DateTime getDateTime();
     void setUpOneWireProbes(); // -----> NOT DEFINED YET
     void updateProbesTemperatures(); // ----> NOT DEFINED YET
@@ -73,6 +85,7 @@ public:
     float getOneWireTempFrom(DeviceAddress address); // ----> NOT DEFINED YET
     void writeAnalogOutput(uint8_t output, uint8_t value);
     void writeDigitalOutput(uint8_t output, uint8_t value);
+    void turnOnFan(bool value, bool CCW = false);
     // WIFI CLASS
     void loopOTA();
     void WiFiLoop();
@@ -83,9 +96,12 @@ public:
     // Puto el que lo lea
     void connectToWiFi(bool web_server, bool web_serial, bool OTA); 
     void setUpWiFi(const char* ssid, const char* password, const char* hostname);
-    void runConfigFile(char* ssid, char* password, char* hostname, char* ip_address, uint16_t* port, char* username, char* prefix_topic);
+    void runConfigFile(char* ssid, char* password, char* hostname, char* ip_address, uint16_t* port, char* mqtt_id, char* username, char* mqtt_password, char* prefix_topic);
     void setUpDefaultParameters(stage_parameters &stage1_params, stage_parameters &stage2_params, stage_parameters &stage3_params, room_parameters &room, data_tset &N_tset);
     void updateDefaultParameters(stage_parameters &stage1_params, stage_parameters &stage2_params, stage_parameters &stage3_params, room_parameters &room, data_tset &N_tset);
+
+    //Logger
+    void DEBUG(const char *message);
 };
 
 #endif

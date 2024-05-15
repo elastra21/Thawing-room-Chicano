@@ -2,11 +2,13 @@
 #define MY_WIFI_H
 #include "EEPROM.h"
 #include <Update.h>
+#include <SPIFFS.h>
 #include <ESPmDNS.h>
 #include <AsyncTCP.h>
 #include <WiFiMulti.h>
 #include <WiFiClient.h>
 #include <ArduinoOTA.h>
+#include <ArduinoJson.h>
 #include "hardware/logger.h"
 #include "resources/WebFiles.h"
 
@@ -30,6 +32,7 @@ class WIFI {
     void setUpOTA();
     void reconnect();
     bool isConnected();
+
     void connectToWiFi();
     bool refreshWiFiStatus();
     bool getConnectionStatus();
@@ -39,5 +42,9 @@ class WIFI {
     char password[PASSWORD_SIZE];
     char hostname[HOSTNAME_SIZE];  
     bool last_connection_state = false;
+    void DEBUG(const char *message);
+    String generateHTMLForJson(JsonVariant json, String path = "");
+    void updateJsonFromForm(AsyncWebServerRequest *request, JsonVariant json);
+
 };
 #endif
