@@ -12,6 +12,8 @@ void setUpDefaultParameters();
 String addressToString(uint8_t *address);
 int responseToInt(byte *value, size_t len);
 float responseToFloat(byte *value, size_t len);
+void asyncLoopSprinkler(uint32_t &timer, uint32_t offTime, uint32_t onTime);
+bool hasIntervalPassed(uint32_t &previousMillis, uint32_t interval, bool to_min);
 void callback(char *topic, byte *payload, unsigned int len);  //callback function for mqtt, see definition after loop
 
 

@@ -471,30 +471,32 @@ void loop() {
       F1_stg_2_timmer = millis();
     }
 
-    // Turn ON S1 when time is over
-    if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_offtime * MINS))) {
-      controller.writeDigitalOutput(VALVE_IO, HIGH);  // Output of S1
-      S1_state = 1;
-      WebSerial.println("Stage 2 S1 ON");
-      S1_data.M_S1 = 1;  // When M_S1 = 1 ==> ON
+    asyncLoopSprinkler(S1_stg_2_timer, N_st2.N_s1_st2_offtime , N_st2.N_s1_st2_ontime);
 
-      mqtt.publishData(m_S1, S1_data.M_S1);
-      WebSerial.println("stg2 S1 start published");
-      S1_stg_2_timer = millis();
-    }
+    // // Turn ON S1 when time is over
+    // if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_offtime * MINS))) {
+    //   controller.writeDigitalOutput(VALVE_IO, HIGH);  // Output of S1
+    //   S1_state = 1;
+    //   WebSerial.println("Stage 2 S1 ON");
+    //   S1_data.M_S1 = 1;  // When M_S1 = 1 ==> ON
 
-    // Turn OFF S1 when time is over
-    if ((S1_state == 1 && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_ontime * MINS))) || (MTR_State == 0)) {
-      controller.writeDigitalOutput(VALVE_IO, LOW);  // Output of S1
-      S1_state = 0;
-      WebSerial.println("Stage 2 S1 OFF");
-      S1_data.M_S1 = 2;  // When M_S1 = 2 ==> OFF
+    //   mqtt.publishData(m_S1, S1_data.M_S1);
+    //   WebSerial.println("stg2 S1 start published");
+    //   S1_stg_2_timer = millis();
+    // }
 
-      mqtt.publishData(m_S1, S1_data.M_S1);
-      WebSerial.println("stg2 S1 stop published");
+    // // Turn OFF S1 when time is over
+    // if ((S1_state == 1 && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_ontime * MINS))) || (MTR_State == 0)) {
+    //   controller.writeDigitalOutput(VALVE_IO, LOW);  // Output of S1
+    //   S1_state = 0;
+    //   WebSerial.println("Stage 2 S1 OFF");
+    //   S1_data.M_S1 = 2;  // When M_S1 = 2 ==> OFF
 
-      S1_stg_2_timer = millis();
-    }
+    //   mqtt.publishData(m_S1, S1_data.M_S1);
+    //   WebSerial.println("stg2 S1 stop published");
+
+    //   S1_stg_2_timer = millis();
+    // }
 
     // Calculate the Setpoint every 3 seconds in Function of Ta with the formula : Setpoint = A*(B-Ta)
     if ((millis() - pid_computing_timer >= 3000)) {
@@ -521,7 +523,7 @@ void loop() {
     }
 
     // Put the PID at 0 when F1 OFF
-    if (MTR_State == 0 && (millis() - turn_on_pid_timer >= 3000)) {
+    if (MTR_State == 0 && (millis() - turn_off_pid_timer >= 3000)) {
       //Setpoint = 0;
       PIDinput = 0;
       Output = 0;
@@ -631,27 +633,30 @@ void loop() {
       F1_stg_3_timer = millis();
     }
 
-    if (S1_state == 0 && (millis() - S1_stg_3_timer >= (N_st3.N_s1_st3_offtime * MINS))) {
-      controller.writeDigitalOutput(VALVE_IO, HIGH);
-      S1_state = 1;
-      WebSerial.println("Stage 3 S1 ON");
-      S1_data.M_S1 = 1;
+    asyncLoopSprinkler(S1_stg_3_timer, N_st3.N_s1_st3_offtime , N_st3.N_s1_st3_ontime);
 
-      mqtt.publishData(m_S1, S1_data.M_S1);
-      WebSerial.println("stg3 S1 start published");
-      S1_stg_3_timer = millis();
-    }
+    // if (S1_state == 0 && (millis() - S1_stg_3_timer >= (N_st3.N_s1_st3_offtime * MINS))) {
+    //   controller.writeDigitalOutput(VALVE_IO, HIGH);
+    //   S1_state = 1;
+    //   WebSerial.println("Stage 3 S1 ON");
+    //   S1_data.M_S1 = 1;
 
-    if (S1_state == 1 && (millis() - S1_stg_3_timer >= (N_st3.N_s1_st3_ontime * MINS))) {
-      controller.writeDigitalOutput(VALVE_IO, LOW);
-      S1_state = 0;
-      WebSerial.println("Stage 3 S1 OFF with value of S1 ");
-      S1_data.M_S1 = 2;
+    //   mqtt.publishData(m_S1, S1_data.M_S1);
+    //   WebSerial.println("stg3 S1 start published");
+    //   S1_stg_3_timer = millis();
+    // }
 
-      mqtt.publishData(m_S1, S1_data.M_S1);
-      WebSerial.println("stg3 S1 stop published");
-      S1_stg_3_timer = millis();
-    }
+    // if (S1_state == 1 && (millis() - S1_stg_3_timer >= (N_st3.N_s1_st3_ontime * MINS))) {
+    //   controller.writeDigitalOutput(VALVE_IO, LOW);
+    //   S1_state = 0;
+    //   WebSerial.println("Stage 3 S1 OFF with value of S1 ");
+    //   S1_data.M_S1 = 2;
+
+    //   mqtt.publishData(m_S1, S1_data.M_S1);
+    //   WebSerial.println("stg3 S1 stop published");
+    //   S1_stg_3_timer = millis();
+    // }
+    
   }
 }
 
@@ -901,7 +906,7 @@ void setUpDefaultParameters(){
 
   N_st2.N_f1_st2_ontime = 1;
   N_st2.N_f1_st2_offtime = 1;
-  N_st2.N_s1_st2_ontime = 0.5;
+  N_st2.N_s1_st2_ontime = 1;
   N_st2.N_s1_st2_offtime = 1;
 
   N_st3.N_f1_st3_ontime = 10;
@@ -914,4 +919,40 @@ void setUpDefaultParameters(){
 
   N_tset.N_ts_set = 4;
   N_tset.N_tc_set = 2;
+}
+
+void asyncLoopSprinkler(uint32_t &timer, uint32_t offTime, uint32_t onTime) {
+  bool isSprinklerOn = controller.readDigitalInput(VALVE_IO);
+
+  if (!isSprinklerOn && hasIntervalPassed(timer, offTime, true)) {
+    // Es tiempo de encender el aspersor
+    controller.writeDigitalOutput(VALVE_IO, HIGH);
+    WebSerial.println("Sprinkler ON at: " + String(millis()));
+    
+    // publishStateChange(m_S1, true, "Stage 2 S1 Start published "); 
+    mqtt.publishData(m_S1, S1_data.M_S1);
+  } 
+  
+  else if (isSprinklerOn && hasIntervalPassed(timer, onTime, true)) {
+    // Es tiempo de apagar el aspersor
+    controller.writeDigitalOutput(VALVE_IO, LOW);
+    WebSerial.println("Sprinkler OFF at: " + String(millis()));
+
+    // publishStateChange(m_S1, false, "Stage 2 S1 Stop published ");
+    mqtt.publishData(m_S1, S1_data.M_S1);
+  }
+}
+
+bool hasIntervalPassed(uint32_t &previousMillis, uint32_t interval, bool to_min) {
+  unsigned long currentMillis = millis();
+  if(to_min) interval *= 60000;
+  if (previousMillis == 0) {
+    previousMillis = millis() - interval;
+  }
+
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis; // Restablecer el temporizador después de que ha pasado el intervalo
+    return true;
+  }
+  return false; 
 }
