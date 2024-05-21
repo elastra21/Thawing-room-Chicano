@@ -4,9 +4,6 @@
 #include "WS_V2.h"
 #include <DallasTemperature.h>
 
-// #define TIME_ZONE_OFFSET_HRS            (-7)  /* Ensenada, México */
-#define TIME_ZONE_OFFSET_HRS            (+8)   /* Taiping, Malaysia */
-
 // temperature acquisition filter 
 #define HIGH_TEMP_LIMIT 60
 #define LOW_TEMP_LIMIT -40
@@ -40,6 +37,7 @@
 #define TI_AI       PORT_C2
 
 #define BUFFER_SIZE 60 
+#define BUFFER_SIZE_TA 20
 
 // Temperature Sensors settings          -------------------------------------------------------------------->
 #define ONE_WIRE_BUS 13// Data wire is plugged into port 2 on the Arduin

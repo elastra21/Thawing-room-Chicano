@@ -8,12 +8,16 @@
 // #define SECRET_SSID "MFP-Guest24" 
 // #define SECRET_PASS "testing123"
 #define HOST_NAME "chicano"
-// #define IP_ADDRESS "192.168.1.160" //previous ip : 10,0,3,21, replace that ip to match the IP of the device where the broker is running
+// #define IP_ADDRESS "192.168.100.52" //previous ip : 10,0,3,21, replace that ip to match the IP of the device where the broker is running
 // #define IP_ADDRESS "172.16.30.140" //previous ip : 10,0,3,21, replace that ip to match the IP of the device where the broker is running
+<<<<<<< HEAD
 #define IP_ADDRESS "192.168.100.61" //previous ip : 10,0,3,21, replace that ip to match the IP of the device where the broker is running
+=======
+#define IP_ADDRESS "192.168.99.202" //previous ip : 10,0,3,21, replace that ip to match the IP of the device where the broker is running
+>>>>>>> refs/remotes/origin/MFP-V2
 
 
 #define PORT      1883
-#define USERNAME  "Chicano"  //name of the device on to the broker
-#define PASS      ""              // optional psw
-#define TOPIC     "home/bedroom/temperature" //topic to publish to
+#define MQTT_ID   "chicano_MFP2"  //name of the device on to the broker
+#define USERNAME  "mafipro"     //name of the user to secure connection
+#define PASS      "Cfpp2021"              // Password for secure connection

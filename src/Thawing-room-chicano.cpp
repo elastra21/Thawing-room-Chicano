@@ -93,7 +93,7 @@ uint32_t S1_stg_2_timer = 0UL;         // S1 stage 2 timing
 uint32_t F1_stg_3_timer = 0UL;         // F1 stage 3 timing
 uint32_t S1_stg_3_timer = 0UL;         // S1 stage 3 timing
 uint32_t get_temp_timer = 0UL;         // temperature acquisition
-uint32_t ts_avg_timer = 0UL;           // Ts average timing
+uint32_t temp_avg_timer = 0UL;           // Ts average timing
 uint32_t stg_2_pid_timer = 0UL;        // stage 2 PID
 uint32_t turn_on_pid_timer = 0UL;      // stage 2 PID ON
 uint32_t turn_off_pid_timer = 0UL;     // stage 2 PID OFF
@@ -107,11 +107,9 @@ float TC = 0, TC_F = 0;  //Tc
 float TI = 0, TI_F = 0;  //Ti optional
 
 // ########################### Buffer ##########################
-float avg_ts = 0.0;              // average surface temperature
-float buffer_sum = 0;            // variable to store the buffer_sum of the received values
-float buffer[BUFFER_SIZE] = {};  // buffer to store the values
-uint8_t buffer_len = 0;
-uint8_t buffer_index = 0;  // buffer index
+SensorBuffer sensorTs(BUFFER_SIZE);  // Crear una instancia para el sensor Ts
+SensorBuffer sensorTc(BUFFER_SIZE);  // Crear otra instancia para el sensor Tc
+SensorBuffer sensorTa(BUFFER_SIZE_TA); // Ta with a Buffer of
 
 MqttClient mqtt;
 Controller controller;
@@ -126,7 +124,7 @@ void backgroundTasks(void* pvParameters) {
       mqtt.loop();
       controller.loopOTA();
     }
-    delay(100);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
 }
 
@@ -141,7 +139,7 @@ void setup() {
   controller.setUpRTC();
 
 
-  mqtt.connect(IP_ADDRESS, PORT, USERNAME);
+  mqtt.connect(IP_ADDRESS, PORT, MQTT_ID, USERNAME, PASS);
   mqtt.setCallback(callback);
 
   // xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
@@ -160,12 +158,14 @@ void setup() {
 
 void loop() {
   // if is for testing porpuse comment this "if" and replace DateTime "now" for: DateTime now(__DATE__, __TIME__); 
+
   if (!controller.isRTCConnected()) {  
     WebSerial.println("RTC not connected"); 
     while (true) delay(1000);
   }
 
   DateTime now = controller.getDateTime();
+  // DateTime now(__DATE__, __TIME__); 
 
   controller.WiFiLoop();
 
@@ -204,25 +204,19 @@ void loop() {
   }
 
   //---- Get surface temperature average with a FIFO buffer ---- //////////////////////////////// Something fuckin' wrong with the average
-  if (millis() - ts_avg_timer >= AVG_RESOLUTION) {
+ 
+    // ------------ Average Ts ---------------//
+  if (millis() - temp_avg_timer >= AVG_RESOLUTION) {
     
-    if (buffer_len < BUFFER_SIZE) { //if buffer not full, we add the value
-        buffer_sum += TS_F;
-        buffer[buffer_len] = TS_F;
-        buffer_len++;
-      }
-      else { //buffer full, we remove the oldest value and add the new one
-        buffer_sum -= buffer[buffer_index];
-        buffer[buffer_index] = TS_F;
-        buffer_sum += TS_F;
-        buffer_index = (buffer_index + 1) % BUFFER_SIZE; // update the buffer index
-      }
-
-      avg_ts = buffer_sum/buffer_len;
+    sensorTs.addValue(TS_F); // Añadir el valor al buffer de Ts
+    sensorTc.addValue(TC_F);
+    sensorTa.addValue(TA_F);
 
     mqtt.publishData(AVG_TS_TOPIC, temp_data.AvgTs_N);
-    // WebSerial.println("Temp data published");
-    ts_avg_timer = millis();
+    mqtt.publishData(AVG_TC_TOPIC, temp_data.AvgTc_N);
+    mqtt.publishData(AVG_TA_TOPIC, temp_data.AvgTa_N);
+
+    temp_avg_timer = millis();
   }
 
   //---- Temperature MQTT publish ----///////////////////////////////////////////////////////////
@@ -231,7 +225,9 @@ void loop() {
     temp_data.Ts_N = TS_F;
     temp_data.Tc_N = TC_F;
     temp_data.Ti_N = TI_F;
-    temp_data.AvgTs_N = avg_ts;
+    temp_data.AvgTs_N = sensorTs.getAverage();
+    temp_data.AvgTc_N = sensorTc.getAverage();
+    temp_data.AvgTa_N = sensorTa.getAverage();
 
     mqtt.publishData(TA_TOPIC, temp_data.Ta_N);
     mqtt.publishData(TS_TOPIC, temp_data.Ts_N);
@@ -273,6 +269,11 @@ void loop() {
 
   //---- Time Stage ON/OFF and A & B MQTT Publish ----///////////////////////////////////////////////////////
   if (millis() - A_B_timer >= 10000) {
+    mqtt.publishData(STAGE, stage_data.stage);
+    mqtt.publishData(m_F1, F1_data.M_F1);
+    // mqtt.publishData(m_F2, fan_2);
+    mqtt.publishData(m_S1, S1_data.M_S1);
+    mqtt.publishData(PID_OUTPUT, coefOutput);
     // STAGE 1
     mqtt.publishData(ACK_F1_ST1_ONTIME, N_st1.N_f1_st1_ontime);
     mqtt.publishData(ACK_F1_ST1_OFFTIME, N_st1.N_f1_st1_offtime);
@@ -371,6 +372,7 @@ void loop() {
        && Stage2_started == 0 && Stage2_RTC_set == 0)) {
 
     START1 = MTR_State = MTR2_State = C1_state = 0;
+    
     controller.writeDigitalOutput(STAGE_1_IO, LOW);
     controller.writeDigitalOutput(STAGE_2_IO, LOW);
     controller.writeDigitalOutput(STAGE_3_IO, LOW);
@@ -432,6 +434,7 @@ void loop() {
       WebSerial.println("Stage 1 init M_F1 OFF published ");
       F1_timer = millis();
     }
+    
   }
 
   //---- STAGE 2 ----////////////////////////////////////////////////////////////////////////////
@@ -459,7 +462,7 @@ void loop() {
       F1_stg_2_timmer = millis();
     }
 
-    // Turn OFF F1 when time is over
+    // Turn OFF F1 when time is overcommunicationTask
     if (MTR_State == 1 && (millis() - F1_stg_2_timmer >= (N_st2.N_f1_st2_ontime * MINS))) {
       controller.writeDigitalOutput(FAN_IO, LOW);
       WebSerial.println("Stage 2 F1 Off");
@@ -471,7 +474,16 @@ void loop() {
       F1_stg_2_timmer = millis();
     }
 
+<<<<<<< HEAD
     asyncLoopSprinkler(S1_stg_2_timer, N_st2.N_s1_st2_offtime , N_st2.N_s1_st2_ontime);
+=======
+    // Turn ON S1 when time is over
+    if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_offtime * MINS))) {   // ===== DONE =====
+      controller.writeDigitalOutput(VALVE_IO, HIGH);  // Output of S1
+      S1_state = 1;
+      WebSerial.println("Stage 2 S1 ON");
+      S1_data.M_S1 = 1;  // When M_S1 = 1 ==> ON
+>>>>>>> refs/remotes/origin/MFP-V2
 
     // // Turn ON S1 when time is over
     // if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_offtime * MINS))) {
@@ -480,10 +492,22 @@ void loop() {
     //   WebSerial.println("Stage 2 S1 ON");
     //   S1_data.M_S1 = 1;  // When M_S1 = 1 ==> ON
 
+<<<<<<< HEAD
     //   mqtt.publishData(m_S1, S1_data.M_S1);
     //   WebSerial.println("stg2 S1 start published");
     //   S1_stg_2_timer = millis();
     // }
+=======
+    // Turn OFF S1 when time is over
+    unsigned long timeElapsed = millis() - S1_stg_2_timer;
+    bool timeConditionMet = timeElapsed >= (N_st2.N_s1_st2_ontime * MINS);
+
+    if ((S1_state == 1 || !MTR_State) && timeConditionMet) {  // ===== DONE =====
+      controller.writeDigitalOutput(VALVE_IO, LOW);  // Output of S1
+      S1_state = 0;
+      WebSerial.println("Stage 2 S1 OFF");
+      S1_data.M_S1 = 2;  // When M_S1 = 2 ==> OFF
+>>>>>>> refs/remotes/origin/MFP-V2
 
     // // Turn OFF S1 when time is over
     // if ((S1_state == 1 && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_ontime * MINS))) || (MTR_State == 0)) {
@@ -510,13 +534,13 @@ void loop() {
     }
 
     // Activate the PID when F1 ON
-    if (MTR_State == 1 && (millis() - turn_on_pid_timer >= 3000)) {
-      PIDinput = TA_F;
+    if (MTR_State && (millis() - turn_on_pid_timer >= 3000)) {
+      PIDinput = sensorTa.getAverage();
       coefOutput = (coefPID * Output) / 100;
       WebSerial.println(coefOutput);
       air_in_feed_PID.Compute();
-      controller.writeAnalogOutput(AIR_PWM, Output);
-      // controller.writeAnalogOutput(AIR_PWM, coefOutput);
+      // controller.writeAnalogOutput(AIR_PWM, Output);
+      controller.writeAnalogOutput(AIR_PWM, coefOutput);
       Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
       WebSerial.println("Converted_Output is " + String(Converted_Output));
       turn_on_pid_timer = millis();
@@ -528,8 +552,8 @@ void loop() {
       PIDinput = 0;
       Output = 0;
       coefOutput = 0; // inverted on chicano so 255=0V
-      controller.writeAnalogOutput(AIR_PWM, Output);
-      // controller.writeAnalogOutput(AIR_PWM, coefOutput);
+      // controller.writeAnalogOutput(AIR_PWM, Output);
+      controller.writeAnalogOutput(AIR_PWM, coefOutput);
       Converted_Output = ((Output - 0) / (255 - 0)) * (10000 - 0) + 0;
       WebSerial.println("Converted_Output is " + String(Converted_Output));
       turn_off_pid_timer = millis();
@@ -560,7 +584,7 @@ void loop() {
 
   //---- STAGE 3 ----////////////////////////////////////////////////////////////////////////////
   // Initialisation Stage3 (reset all the other stages to 0)
-  if (TS_F >= N_tset.N_ts_set && TC_F >= N_tset.N_tc_set && Stage3_started == 0 && Stage2_started == 1) {
+  if (sensorTs.getAverage() >= N_tset.N_ts_set && sensorTc.getAverage() >= N_tset.N_tc_set && Stage3_started == 0 && Stage2_started == 1) {
     START1 = START2 = Stage2_RTC_set = MTR_State = 0;
 
     // Turn All Output OFF

@@ -11,7 +11,7 @@ const double temperature_per_step = range / REFERENCE;
 
 Controller::Controller(/* args */) {
   setUpLogger();
-  WebSerial.println("Controller created");
+  DEBUG("Controller created");
 }
 
 Controller::~Controller() {
@@ -25,8 +25,9 @@ void Controller::init() {
 
 void Controller::setUpLogger() {
   #ifdef WebSerial
-    WebSerial.begin(115200);
-    WebSerial.println("Logger set up");
+    // DEBUG(115200);
+    Serial.begin(115200);
+    DEBUG("Logger set up");
   #endif
 }
 
@@ -57,7 +58,12 @@ void Controller::setUpDigitalOutputs() {
 void Controller::setUpDigitalInputs() {
   //Testing pourpose
   // pinMode(PORT_B0, INPUT_PULLUP);
+<<<<<<< HEAD
    for (uint8_t i = 0; i < inputs_size; i++) pinMode(inputs[i], INPUT_PULLUP);
+=======
+
+  for (uint8_t i = 0; i < inputs_size; i++) pinMode(inputs[i], INPUT_PULLUP);
+>>>>>>> refs/remotes/origin/MFP-V2
 }
 
 void Controller::setUpAnalogInputs() {
@@ -66,7 +72,7 @@ void Controller::setUpAnalogInputs() {
 
 void Controller::setUpI2C() {
   while (!rtc_i2c.begin(I2C_SDA, I2C_SCL)){
-    WebSerial.println("RTC I2C not found");
+    DEBUG("RTC I2C not found");
     delay(1000);
   }
   
@@ -74,7 +80,7 @@ void Controller::setUpI2C() {
 
 void Controller::setUpRTC() {
   if (!rtc.begin(&rtc_i2c)) {
-    WebSerial.println("Couldn't find RTC");
+    DEBUG("Couldn't find RTC");
     while (1);
   }
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
@@ -117,8 +123,8 @@ bool Controller::readDigitalInput(uint8_t input) {
 }
 
 void Controller::writeAnalogOutput(uint8_t output, uint8_t value) {
-  WebSerial.print("Writing analog output: ");
-  WebSerial.print(output);
+
+  DEBUG(("Writing analog output: "+ (String)output).c_str());
   ledcWrite(AIR_PWM, value);
 }
 
@@ -169,7 +175,13 @@ void Controller::setUpWiFi(const char* ssid, const char* password, const char* h
 void Controller::WiFiLoop() {
   if (!isWiFiConnected()) {
     reconnectWiFi();
-    delay(500);
+    vTaskDelay(500);
     return;
   }
+}
+
+void Controller::DEBUG(const char *message) {
+  char buffer[100];
+  snprintf(buffer, sizeof(buffer), "[CONTROLLER]: %s", message);
+  WebSerial.println(buffer);
 }

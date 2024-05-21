@@ -10,9 +10,10 @@
 #include <Arduino.h>
 #include <OneWire.h>
 #include <NTPClient.h>
+#include "SensorBuffer.h"
 #include <DallasTemperature.h>
 
-#define WebSerial Serial
+// #define WebSerial Serial
 
 #define TEMPERATURE_MIN  -50 // Minimum temperature value (in Celsius)
 #define TEMPERATURE_MAX  150
@@ -70,6 +71,9 @@ public:
     // Puto el que lo lea
     void connectToWiFi(bool web_server, bool web_serial, bool OTA); 
     void setUpWiFi(const char* ssid, const char* password, const char* hostname);
+
+    // Logger
+    void DEBUG(const char *message);
 
 };
 
