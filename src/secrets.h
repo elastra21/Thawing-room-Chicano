@@ -11,7 +11,7 @@
 // #define IP_ADDRESS "192.168.100.52" //previous ip : 10,0,3,21, replace that ip to match the IP of the device where the broker is running
 // #define IP_ADDRESS "172.16.30.140" //previous ip : 10,0,3,21, replace that ip to match the IP of the device where the broker is running
 #define IP_ADDRESS "192.168.100.61" //previous ip : 10,0,3,21, replace that ip to match the IP of the device where the broker is running
-#define IP_ADDRESS "192.168.99.202" //previous ip : 10,0,3,21, replace that ip to match the IP of the device where the broker is running
+// #define IP_ADDRESS "192.168.99.202" //previous ip : 10,0,3,21, replace that ip to match the IP of the device where the broker is running
 
 
 #define PORT      1883

@@ -10,6 +10,7 @@
 #include <Arduino.h>
 #include <OneWire.h>
 #include <NTPClient.h>
+#include <Preferences.h>
 #include "SensorBuffer.h"
 #include <DallasTemperature.h>
 
@@ -25,10 +26,25 @@
 // #define TIME_ZONE_OFFSET_HRS            (-7)  /* Ensenada, México */
 #define TIME_ZONE_OFFSET_HRS            (+8)   /* Taiping, Malaysia */
 
+enum SystemState {
+    IDLE,
+    STAGE1,
+    STAGE2,
+    STAGE3,
+    ERROR,
+    NUM_STATES
+};
+
+struct StageState {
+    uint8_t stage;
+    uint8_t step;
+};
+
 class Controller {
 private:
     WIFI wifi;
     RTC_DS3231 rtc;
+    Preferences preferences;
 
     // Pinout pinout;
     // Logger logger;
@@ -43,6 +59,9 @@ private:
 public:
     ~Controller();
     Controller(/* args */);
+
+    StageState getLastState();
+    void saveLastState(StageState current_state);
     
     DeviceAddress ADDRESS_TA = { 0x28, 0x8C, 0x4B, 0xAD, 0x27, 0x19, 0x01, 0xCA }; // Ta
     DeviceAddress ADDRESS_TS = { 0x28, 0x78, 0x98, 0x8B, 0x0B, 0x00, 0x00, 0x22 }; // Ts

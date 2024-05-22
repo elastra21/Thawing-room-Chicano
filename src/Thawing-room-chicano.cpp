@@ -71,8 +71,7 @@ bool MTR_State = 0;  // State of the motor that control the Fan F1
 bool MTR2_State = 0; // State of the motor that control the Fan F2
 
 // State of the Stage (data = 1, 2 or 3)
-data_stage stage_data;
-uint8_t stage = 0;
+StageState currentState = {IDLE, 0};
 
 // Parameters of Stage 2
 uint8_t Stage2_hour = 0;
@@ -151,7 +150,9 @@ void setup() {
   
   WebSerial.println("===========> Reboted!! <===========");
   
-  setStage(0);
+  StageState last_state = controller.getLastState();
+  WebSerial.println("Last state: " + String(last_state.stage) + " " + String(last_state.step));
+  if (last_state.stage != IDLE) currentState = last_state;
 
   delay(750);
 }
@@ -235,7 +236,7 @@ void loop() {
     mqtt.publishData(TI_TOPIC, temp_data.Ti_N);
 
     // for debug purpose
-    WebSerial.println("Stage : " + String(stage_data.stage));
+    WebSerial.println("Stage : " + String(currentState.stage));
     WebSerial.println("Average: " + String(temp_data.AvgTs_N));
     // WebSerial.println(controller.readDigitalInput(DI0));
     WebSerial.println("Ta: " + String(TA));
@@ -269,7 +270,7 @@ void loop() {
 
   //---- Time Stage ON/OFF and A & B MQTT Publish ----///////////////////////////////////////////////////////
   if (millis() - A_B_timer >= 10000) {
-    mqtt.publishData(STAGE, stage_data.stage);
+    mqtt.publishData(STAGE, currentState.stage);
     mqtt.publishData(m_F1, F1_data.M_F1);
     // mqtt.publishData(m_F2, fan_2);
     mqtt.publishData(m_S1, S1_data.M_S1);
@@ -404,7 +405,7 @@ void loop() {
       controller.writeDigitalOutput(STAGE_1_IO, HIGH);  // Turn On the LED of Stage 1
       C1_state = 1;                    // State of Stage 1 turned ON
       WebSerial.println("Stage 1 Started");
-      setStage(1);
+      setStage(STAGE1);
       WebSerial.println("Stage 1 Status Send packet ");
       F1_timer = millis() - (N_st1.N_f1_st1_ontime * MINS);
     }
@@ -444,8 +445,7 @@ void loop() {
 
       C2_state = 1;
       WebSerial.println("Stage 2 Started");
-      stage = 2;
-      setStage(2);
+      setStage(STAGE2);
       WebSerial.println("Stage 0 Status Send packet ");
       F1_stg_2_timmer = millis() - (N_st2.N_f1_st2_offtime * MINS);
     }
@@ -612,7 +612,7 @@ void loop() {
 
       C3_state = 1;
       WebSerial.println("Stage 3 Started");
-      setStage(3);
+      setStage(STAGE3);
       WebSerial.println("Stage 3 Status Send packet ");
       F1_stg_3_timer = millis() - (N_st3.N_f1_st3_offtime * MINS);
     }
@@ -841,7 +841,6 @@ void stopRoutine() {
     controller.writeDigitalOutput(FAN2_IO, LOW);
     controller.writeAnalogOutput(AIR_PWM, LOW); // with chicano 
 
-    stage = 0;
     Output = 0;
     coefOutput = 0; // inverted for chicano so 255=0V
     stop_temp1 = 1;
@@ -853,7 +852,7 @@ void stopRoutine() {
     mqtt.publishData(m_F2, F2_data.M_F2);
     mqtt.publishData(m_S1, S1_data.M_S1);
 
-    setStage(0);
+    setStage(IDLE);
 
     WebSerial.println("Stage 0 Status Send packet ");
   }
@@ -893,8 +892,11 @@ String addressToString(uint8_t *address) {
 
 void setStage(int Stage) {
   // if (stage_data.stage == Stage) return;
-  stage_data.stage = Stage;
+  currentState.stage = Stage;
+  currentState.step = 0;
   mqtt.publishData(STAGE, Stage);
+
+  controller.saveLastState(currentState);
 }
 
 float responseToFloat(byte *value, size_t len) {
