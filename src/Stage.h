@@ -2,6 +2,7 @@
 #define STAGE_H
 
 #include <Arduino.h>
+#include <Preferences.h>
 
 class Stage {
 private:

@@ -72,7 +72,8 @@ SensorBuffer sensorTs(BUFFER_SIZE);  // Crear una instancia para el sensor Ts
 SensorBuffer sensorTc(10);  // Crear otra instancia para el sensor Tc
 SensorBuffer sensorTa(10);  // Crear otra instancia para el sensor Ta
 
-SystemState currentState = IDLE;
+// SystemState currentState = IDLE;
+StageState currentState = {IDLE, 0};
 
 MqttClient mqtt;
 Controller controller;
@@ -108,8 +109,6 @@ void setup() {
   controller.runConfigFile(SSID, PASS, HOST_NAME, IP_ADDRESS, &PORT, MQTT_ID, USERNAME, MQTT_PASSWORD, PREFIX_TOPIC);
   controller.setUpDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
 
-  setStage(IDLE);
-
   start_btn.begin();
   stop_btn.begin();
   d_start_button.begin();
@@ -118,6 +117,9 @@ void setup() {
   controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
   controller.setUpRTC();
 
+  StageState last_state = controller.getLastState();
+  logger.println("Last state: " + String(last_state.stage) + " " + String(last_state.step));
+  if (last_state.stage != IDLE) currentState = last_state;
   
   DateTime current_date = controller.getDateTime();
   logger.println("Current date: " + String(current_date.hour()) + ":" + String(current_date.minute()) + " " + String(current_date.day()) + "/" + String(current_date.month()));
@@ -141,7 +143,7 @@ void setup() {
 
 void loop() {
   // if is for testing porpuse comment this "if" and replace DateTime "now" for: DateTime now(__DATE__, __TIME__); 
-  // DateTime current_date = controller.getDateTime();
+  DateTime current_date = controller.getDateTime();
   // DateTime current_date(__DATE__, __TIME__); 
 
   if (!controller.isRTCConnected()) {  
@@ -191,12 +193,12 @@ bool handleInputs(button_type override) {
 
 void handleStage(){
   // logger.print("Current State: "+ String(currentState) + " ");
-  if      (currentState == STAGE1)  handleStage1();
-  else if (currentState == STAGE2)  handleStage2();
-  else if (currentState == STAGE3)  handleStage3();
+  if      (currentState.stage == STAGE1)  handleStage1();
+  else if (currentState.stage == STAGE2)  handleStage2();
+  else if (currentState.stage == STAGE3)  handleStage3();
 
-  else if (currentState == IDLE)    idle();
-  else if (currentState == ERROR)   stopRoutine();
+  else if (currentState.stage == IDLE)    idle();
+  else if (currentState.stage == ERROR)   stopRoutine();
 }
 
 void handleStage1(){
@@ -506,7 +508,7 @@ void callback(char *topic, byte *payload, unsigned int len) {
     logger.println("Ts is now IR" + String(is_rts_ir));
   }
 
-  if (currentState != IDLE) return;
+  if (currentState.stage != IDLE) return;
 
       // Delayed start timing
   if (mqtt.isTopicEqual(topic, sub_hours)) {
@@ -669,6 +671,8 @@ void callback(char *topic, byte *payload, unsigned int len) {
     handleInputs(D_START);
     logger.println("d_start BUTTON PRESSED ON NODE RED");
   }
+
+  if(update_default_parameters) controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
 }
 
 void stopRoutine() {
@@ -702,7 +706,7 @@ void stopRoutine() {
 
 bool isValidTemperature(float temp, float minTemp, float maxTemp, const String& sensorName) {
   bool is_valid = temp < minTemp || temp > maxTemp;
-  // if(is_valid) sendTemperaturaAlert(temp, sensorName);
+  if(is_valid) sendTemperaturaAlert(temp, sensorName);
 
   return is_valid;
 }
@@ -726,8 +730,11 @@ void sendTemperaturaAlert(float temp, String sensor){
 }
 
 void setStage(SystemState stage) {
-  currentState = stage;
+  currentState.stage = stage;
+  currentState.step = 0;
+
   mqtt.publishData(STAGE, stage);
+  controller.saveLastState(currentState);
 
   for (int i = STAGE1; i <= STAGE3; i++) {
     if (stageLedPins[i] != -1) digitalWrite(stageLedPins[i], LOW);
@@ -758,7 +765,7 @@ void publishStateChange(const char* topic, int state, const String& message) {
 }
 
 void aknowledgementRoutine(){
-  mqtt.publishData(STAGE, currentState);
+  mqtt.publishData(STAGE, currentState.stage);
 
   mqtt.publishData(m_F1, controller.readDigitalInput(FAN_IO));
   mqtt.publishData(m_F1_CCW, controller.readDigitalInput(FAN_CCW_IO));
@@ -791,8 +798,8 @@ void publishPID(){
   }
 }
 
-// void publishTemperatures(DateTime &current_date) {
-void publishTemperatures() {
+void publishTemperatures(DateTime &current_date) {
+// void publishTemperatures() {
   temp_data.ta = TA_F;
   temp_data.ts = TS_F;
   temp_data.tc = TC_F;
@@ -889,7 +896,7 @@ void onMQTTConnect() {
   mqtt.publishData(m_F1, controller.readDigitalInput(FAN_IO));
   // mqtt.publishData(m_F2, fan_2);
   mqtt.publishData(m_S1, controller.readDigitalInput(VALVE_IO));
-  mqtt.publishData(STAGE, currentState);
+  mqtt.publishData(STAGE, currentState.stage);
   mqtt.publishData(TA_TOPIC, TA);
   mqtt.publishData(TS_TOPIC, TS);
   mqtt.publishData(TC_TOPIC, TC);

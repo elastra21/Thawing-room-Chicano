@@ -232,6 +232,15 @@ void WIFI::setUpWebServer(bool brigeSerial){
         request->send(404, "text/plain", "Configuration file not found");
     }
   });
+
+
+  server.on("/download-default-params", HTTP_GET, [](AsyncWebServerRequest *request) {
+    if (SPIFFS.exists("/defaultParameters.txt")) {
+        request->send(SPIFFS, "/defaultParameters.txt", "application/json", true);
+    } else {
+        request->send(404, "text/plain", "Default Parameters file not found");
+    }
+  });
   
   if (brigeSerial) {
     #ifdef WebSerial_h // Verifica si WebSerialLite.h está incluido 

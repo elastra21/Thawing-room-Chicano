@@ -1,4 +1,5 @@
 #include "Stage.h"
+#include <Preferences.h>
 #include "hardware/Logger.h"
 
 Stage::Stage(uint8_t no_steps, std::function<void ()> callback_init, std::function<void ()> callback_destroy) {
@@ -48,5 +49,6 @@ void Stage::DEBUG(const char *message) {
     snprintf(buffer, sizeof(buffer), "[Stage]: %s", message);
     logger.println(buffer);
 }
+
 
 // Compare this snippet from src/Stage.cpp:

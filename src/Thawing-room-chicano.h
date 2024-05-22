@@ -18,22 +18,13 @@
 typedef struct { float ta; float ts; float tc; float ti; float avg_ts; float avg_tc; float avg_ta; } data_s;
 
 
-enum SystemState {
-    IDLE,
-    STAGE1,
-    STAGE2,
-    STAGE3,
-    ERROR,
-    NUM_STATES
-};
-
 const int stageLedPins[NUM_STATES] = {
     -1, // IDLE no tiene LED asociado
     STAGE_1_IO,
     STAGE_2_IO,
     STAGE_3_IO,
     -1  // ERROR no tiene LED asociado, o puedes asignar un pin si hay un LED para ERROR
-  };
+};
 
 enum SensorProbes{TA_TYPE, TS_TYPE, TC_TYPE};
 enum button_type{NONE, D_START, START, STOP};
@@ -76,7 +67,7 @@ void publishTemperatures();
 void publishStateChange(const char* topic, int state, const String& message);
 
 
-// void sendTemperaturaAlert(float temp, String sensor);
+void sendTemperaturaAlert(float temp, String sensor);
 
 
 //---- timing settings -----////////////////////////////////////////////////////////////////////////////////

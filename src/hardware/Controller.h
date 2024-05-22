@@ -15,6 +15,7 @@
 #include <OneWire.h>
 #include <NTPClient.h>
 #include <ArduinoJson.h>
+#include <Preferences.h>
 #include "SensorBuffer.h"
 #include <Adafruit_MLX90640.h>
 #include <DallasTemperature.h>
@@ -35,6 +36,20 @@ typedef struct {
     float sprinklerOffTime; // Optional, can be 0 or not used for Stage 1
 } stage_parameters;
 
+enum SystemState {
+    IDLE,
+    STAGE1,
+    STAGE2,
+    STAGE3,
+    ERROR,
+    NUM_STATES
+};
+
+struct StageState {
+    uint8_t stage;
+    uint8_t step;
+};
+
 // A and B variables
 typedef struct { float A; float B; }                  room_parameters;
 
@@ -44,8 +59,9 @@ typedef struct { float ts; float tc; }        data_tset;
 class Controller {
 private:
     WIFI wifi;
-    bool ir_ts = false;
     int ARRAY_SIZE = 7;
+    bool ir_ts = false;
+    Preferences preferences;
 
     void setUpI2C();
     void setUpIOS();
@@ -65,6 +81,10 @@ private:
 public:
     ~Controller();
     Controller(/* args */);
+
+    bool thresLastState();
+    StageState getLastState();
+    void saveLastState(StageState current_state);
     
     DeviceAddress ADDRESS_TA = { 0x28, 0x8C, 0x4B, 0xAD, 0x27, 0x19, 0x01, 0xCA }; // Ta
     DeviceAddress ADDRESS_TS = { 0x28, 0x78, 0x98, 0x8B, 0x0B, 0x00, 0x00, 0x22 }; // Ts
