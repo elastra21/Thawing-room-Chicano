@@ -58,12 +58,7 @@ void Controller::setUpDigitalOutputs() {
 void Controller::setUpDigitalInputs() {
   //Testing pourpose
   // pinMode(PORT_B0, INPUT_PULLUP);
-<<<<<<< HEAD
    for (uint8_t i = 0; i < inputs_size; i++) pinMode(inputs[i], INPUT_PULLUP);
-=======
-
-  for (uint8_t i = 0; i < inputs_size; i++) pinMode(inputs[i], INPUT_PULLUP);
->>>>>>> refs/remotes/origin/MFP-V2
 }
 
 void Controller::setUpAnalogInputs() {

@@ -474,16 +474,14 @@ void loop() {
       F1_stg_2_timmer = millis();
     }
 
-<<<<<<< HEAD
     asyncLoopSprinkler(S1_stg_2_timer, N_st2.N_s1_st2_offtime , N_st2.N_s1_st2_ontime);
-=======
     // Turn ON S1 when time is over
-    if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_offtime * MINS))) {   // ===== DONE =====
-      controller.writeDigitalOutput(VALVE_IO, HIGH);  // Output of S1
-      S1_state = 1;
-      WebSerial.println("Stage 2 S1 ON");
-      S1_data.M_S1 = 1;  // When M_S1 = 1 ==> ON
->>>>>>> refs/remotes/origin/MFP-V2
+//     if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_offtime * MINS))) {   // ===== DONE =====
+//       controller.writeDigitalOutput(VALVE_IO, HIGH);  // Output of S1
+//       S1_state = 1;
+//       WebSerial.println("Stage 2 S1 ON");
+//       S1_data.M_S1 = 1;  // When M_S1 = 1 ==> ON
+// >>>>>>> refs/remotes/origin/MFP-V2
 
     // // Turn ON S1 when time is over
     // if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_offtime * MINS))) {
@@ -492,22 +490,10 @@ void loop() {
     //   WebSerial.println("Stage 2 S1 ON");
     //   S1_data.M_S1 = 1;  // When M_S1 = 1 ==> ON
 
-<<<<<<< HEAD
     //   mqtt.publishData(m_S1, S1_data.M_S1);
     //   WebSerial.println("stg2 S1 start published");
     //   S1_stg_2_timer = millis();
     // }
-=======
-    // Turn OFF S1 when time is over
-    unsigned long timeElapsed = millis() - S1_stg_2_timer;
-    bool timeConditionMet = timeElapsed >= (N_st2.N_s1_st2_ontime * MINS);
-
-    if ((S1_state == 1 || !MTR_State) && timeConditionMet) {  // ===== DONE =====
-      controller.writeDigitalOutput(VALVE_IO, LOW);  // Output of S1
-      S1_state = 0;
-      WebSerial.println("Stage 2 S1 OFF");
-      S1_data.M_S1 = 2;  // When M_S1 = 2 ==> OFF
->>>>>>> refs/remotes/origin/MFP-V2
 
     // // Turn OFF S1 when time is over
     // if ((S1_state == 1 && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_ontime * MINS))) || (MTR_State == 0)) {
