@@ -5,6 +5,9 @@
 #include <PubSubClient.h>
 
 #define MQTT_USERNAME_SIZE 32
+#define MQTT_ID_SIZE 32
+#define MQTT_PASSWORD_SIZE 32
+#define PREFIX_SIZE 32
 
 //             subscribe topics    -------------------------------------------------------------------->
 #define sub_hours           "mfp2/hours"

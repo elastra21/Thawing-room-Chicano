@@ -9,17 +9,17 @@
 #include "Thawing-room-chicano.h"
 
 data_rtc N_rtc;  // structure data_rtc from the config file is renamed N_rtc
-data_st1 N_st1;  // fan (F1) STAGE 1 on and off time
-data_st2 N_st2;  // fan (F1) and sprinklers (S1) STAGE 2 on and off time
-data_st3 N_st3;  // fan (F1) and sprinklers (S1) STAGE 3 on and off time
+
+// Stage parameters
+stage_parameters stage1_params;
+stage_parameters stage2_params;  // fan (F1) and sprinklers (S1) STAGE 2 on and off time
+stage_parameters stage3_params;
+
+// A & B variables
+room_parameters room;
 
 // State of SPRINKLER 1
 bool S1_state = 0;
-
-// A & B variables
-data_SP N_SP;
-float A = 0, B = 0;
-bool R_A = 0, R_B = 0;
 
 // PID variables
 data_PIDO PID_data;           // value of the PID output
@@ -43,7 +43,7 @@ uint8_t Converted_Output = 0;
 data_s temp_data;
 
 // Ts & Tc target value
-data_tset N_tset;
+data_tset temp_set;
 bool stop_temp1 = 0, stop_temp2 = 0;
 
 // Fan F1 value (1 parameter)
@@ -131,14 +131,24 @@ void backgroundTasks(void* pvParameters) {
 void setup() {
   controller.init();
 
-  setUpDefaultParameters();
+  char SSID[SSID_SIZE];
+  char PASS[PASSWORD_SIZE];
+  char HOST_NAME[HOSTNAME_SIZE];
+  char IP_ADDRESS[IP_ADDRESS_SIZE];
+  uint16_t PORT;
+  char MQTT_ID[MQTT_ID_SIZE];
+  char USERNAME[MQTT_USERNAME_SIZE];
+  char MQTT_PASSWORD[MQTT_PASSWORD_SIZE];
+  char PREFIX_TOPIC[PREFIX_SIZE];
 
-  controller.setUpWiFi(SECRET_SSID, SECRET_PASS,HOST_NAME);
+  controller.runConfigFile(SSID, PASS, HOST_NAME, IP_ADDRESS, &PORT, MQTT_ID, USERNAME, MQTT_PASSWORD, PREFIX_TOPIC);
+  controller.setUpDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+
+  controller.setUpWiFi(SSID, PASS, HOST_NAME);
   controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
   controller.setUpRTC();
 
-
-  mqtt.connect(IP_ADDRESS, PORT, MQTT_ID, USERNAME, PASS);
+  mqtt.connect(IP_ADDRESS, PORT, MQTT_ID, USERNAME, MQTT_PASSWORD);
   mqtt.setCallback(callback);
 
   // xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
@@ -246,8 +256,8 @@ void loop() {
     // WebSerial.println(controller.readAnalogInput(TI_AI));   // <=========== this shit it's da problem 
     WebSerial.println("Nstart: " + String(N_start));
     WebSerial.println("Nstop: " + String(N_stop));
-    WebSerial.println("A variable: " + String(N_SP.N_A));
-    WebSerial.println("B variable: " + String(N_SP.N_B));
+    WebSerial.println("A variable: " + String(room.A));
+    WebSerial.println("B variable: " + String(room.B));
     WebSerial.println("P variable: " + String(Kp));
     WebSerial.println("I variable: " + String(Ki));
     WebSerial.println("D variable: " + String(Kd));
@@ -276,28 +286,28 @@ void loop() {
     mqtt.publishData(m_S1, S1_data.M_S1);
     mqtt.publishData(PID_OUTPUT, coefOutput);
     // STAGE 1
-    mqtt.publishData(ACK_F1_ST1_ONTIME, N_st1.N_f1_st1_ontime);
-    mqtt.publishData(ACK_F1_ST1_OFFTIME, N_st1.N_f1_st1_offtime);
+    mqtt.publishData(ACK_F1_ST1_ONTIME, stage1_params.fanOnTime);
+    mqtt.publishData(ACK_F1_ST1_OFFTIME, stage1_params.fanOffTime);
 
     // STAGE 2
-    mqtt.publishData(ACK_F1_ST2_ONTIME, N_st2.N_f1_st2_ontime);
-    mqtt.publishData(ACK_F1_ST2_OFFTIME, N_st2.N_f1_st2_offtime);
-    mqtt.publishData(ACK_S1_ST2_ONTIME, N_st2.N_s1_st2_ontime);
-    mqtt.publishData(ACK_S1_ST2_OFFTIME, N_st2.N_s1_st2_offtime);
+    mqtt.publishData(ACK_F1_ST2_ONTIME, stage2_params.fanOnTime);
+    mqtt.publishData(ACK_F1_ST2_OFFTIME, stage2_params.fanOffTime);
+    mqtt.publishData(ACK_S1_ST2_ONTIME, stage2_params.sprinklerOnTime);
+    mqtt.publishData(ACK_S1_ST2_OFFTIME, stage2_params.sprinklerOffTime);
 
     // STAGE 3
-    mqtt.publishData(ACK_F1_ST3_ONTIME, N_st3.N_f1_st3_ontime);
-    mqtt.publishData(ACK_F1_ST3_OFFTIME, N_st3.N_f1_st3_offtime);
-    mqtt.publishData(ACK_S1_ST3_ONTIME, N_st3.N_s1_st3_ontime);
-    mqtt.publishData(ACK_S1_ST3_OFFTIME, N_st3.N_s1_st3_offtime);
+    mqtt.publishData(ACK_F1_ST3_ONTIME, stage3_params.fanOnTime);
+    mqtt.publishData(ACK_F1_ST3_OFFTIME, stage3_params.fanOffTime);
+    mqtt.publishData(ACK_S1_ST3_ONTIME, stage3_params.sprinklerOnTime);
+    mqtt.publishData(ACK_S1_ST3_OFFTIME, stage3_params.sprinklerOffTime);
 
     // A & B
-    mqtt.publishData(ACK_A, N_SP.N_A);
-    mqtt.publishData(ACK_B, N_SP.N_B);
+    mqtt.publishData(ACK_A, room.A);
+    mqtt.publishData(ACK_B, room.B);
 
     // Ts & Tc
-    mqtt.publishData(ACK_TS, N_tset.N_ts_set);
-    mqtt.publishData(ACK_TC, N_tset.N_tc_set);
+    mqtt.publishData(ACK_TS, temp_set.ts);
+    mqtt.publishData(ACK_TC, temp_set.tc);
 
     A_B_timer = millis();
   }
@@ -407,12 +417,12 @@ void loop() {
       WebSerial.println("Stage 1 Started");
       setStage(STAGE1);
       WebSerial.println("Stage 1 Status Send packet ");
-      F1_timer = millis() - (N_st1.N_f1_st1_ontime * MINS);
+      F1_timer = millis() - (stage1_params.fanOnTime * MINS);
     }
 
     // Turn ON F1
 
-    if (MTR_State == 0 && (HIGH != controller.readDigitalInput(FAN_IO)) && (millis() - F1_timer >= (N_st1.N_f1_st1_offtime * MINS))) {  // MTR_State is the motor of F1
+    if (MTR_State == 0 && (HIGH != controller.readDigitalInput(FAN_IO)) && (millis() - F1_timer >= (stage1_params.fanOffTime * MINS))) {  // MTR_State is the motor of F1
       controller.writeDigitalOutput(FAN_IO, HIGH);                                                                                       // Turn ON F1
       WebSerial.println("Stage 1 F1 On");
       MTR_State = 1;
@@ -424,7 +434,7 @@ void loop() {
     }
 
     // Turn OFF F1 when the time set in the configuration is over
-    if (MTR_State == 1 && (LOW != controller.readDigitalInput(FAN_IO)) && (millis() - F1_timer >= (N_st1.N_f1_st1_ontime * MINS))) {
+    if (MTR_State == 1 && (LOW != controller.readDigitalInput(FAN_IO)) && (millis() - F1_timer >= (stage1_params.fanOnTime * MINS))) {
       controller.writeDigitalOutput(FAN_IO, LOW);
       controller.writeAnalogOutput(AIR_PWM, 0); // for chicano output is inverted 255=0V and 0=10V
       WebSerial.println("Stage 1 F1 Off");
@@ -447,11 +457,11 @@ void loop() {
       WebSerial.println("Stage 2 Started");
       setStage(STAGE2);
       WebSerial.println("Stage 0 Status Send packet ");
-      F1_stg_2_timmer = millis() - (N_st2.N_f1_st2_offtime * MINS);
+      F1_stg_2_timmer = millis() - (stage2_params.fanOffTime * MINS);
     }
 
     // Turn ON F1 when time is over
-    if (MTR_State == 0 && (millis() - F1_stg_2_timmer >= (N_st2.N_f1_st2_offtime * MINS))) {
+    if (MTR_State == 0 && (millis() - F1_stg_2_timmer >= (stage2_params.fanOffTime * MINS))) {
       controller.writeDigitalOutput(FAN_IO, HIGH);  // Output of F1
       WebSerial.println("Stage 2 F1 On");
       MTR_State = 1;
@@ -463,7 +473,7 @@ void loop() {
     }
 
     // Turn OFF F1 when time is overcommunicationTask
-    if (MTR_State == 1 && (millis() - F1_stg_2_timmer >= (N_st2.N_f1_st2_ontime * MINS))) {
+    if (MTR_State == 1 && (millis() - F1_stg_2_timmer >= (stage2_params.fanOnTime * MINS))) {
       controller.writeDigitalOutput(FAN_IO, LOW);
       WebSerial.println("Stage 2 F1 Off");
       MTR_State = 0;
@@ -474,9 +484,9 @@ void loop() {
       F1_stg_2_timmer = millis();
     }
 
-    asyncLoopSprinkler(S1_stg_2_timer, N_st2.N_s1_st2_offtime , N_st2.N_s1_st2_ontime);
+    asyncLoopSprinkler(S1_stg_2_timer, stage2_params.sprinklerOffTime , stage2_params.sprinklerOnTime);
     // Turn ON S1 when time is over
-//     if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_offtime * MINS))) {   // ===== DONE =====
+//     if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (stage2_params.sprinklerOffTime * MINS))) {   // ===== DONE =====
 //       controller.writeDigitalOutput(VALVE_IO, HIGH);  // Output of S1
 //       S1_state = 1;
 //       WebSerial.println("Stage 2 S1 ON");
@@ -484,7 +494,7 @@ void loop() {
 // >>>>>>> refs/remotes/origin/MFP-V2
 
     // // Turn ON S1 when time is over
-    // if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_offtime * MINS))) {
+    // if ((MTR_State == 1) && (S1_state == 0) && (millis() - S1_stg_2_timer >= (stage2_params.sprinklerOffTime * MINS))) {
     //   controller.writeDigitalOutput(VALVE_IO, HIGH);  // Output of S1
     //   S1_state = 1;
     //   WebSerial.println("Stage 2 S1 ON");
@@ -496,7 +506,7 @@ void loop() {
     // }
 
     // // Turn OFF S1 when time is over
-    // if ((S1_state == 1 && (millis() - S1_stg_2_timer >= (N_st2.N_s1_st2_ontime * MINS))) || (MTR_State == 0)) {
+    // if ((S1_state == 1 && (millis() - S1_stg_2_timer >= (stage2_params.sprinklerOnTime * MINS))) || (MTR_State == 0)) {
     //   controller.writeDigitalOutput(VALVE_IO, LOW);  // Output of S1
     //   S1_state = 0;
     //   WebSerial.println("Stage 2 S1 OFF");
@@ -510,7 +520,7 @@ void loop() {
 
     // Calculate the Setpoint every 3 seconds in Function of Ta with the formula : Setpoint = A*(B-Ta)
     if ((millis() - pid_computing_timer >= 3000)) {
-      Setpoint = (-(N_SP.N_A * (temp_data.AvgTs_N)) + N_SP.N_B);  //use the average of the temperature over the x last minuites
+      Setpoint = (-(room.A * (temp_data.AvgTs_N)) + room.B);  //use the average of the temperature over the x last minuites
       setpoint_data.PID_setpoint = float(Setpoint);
 
       mqtt.publishData(SETPOINT, setpoint_data.PID_setpoint);
@@ -570,7 +580,7 @@ void loop() {
 
   //---- STAGE 3 ----////////////////////////////////////////////////////////////////////////////
   // Initialisation Stage3 (reset all the other stages to 0)
-  if (sensorTs.getAverage() >= N_tset.N_ts_set && sensorTc.getAverage() >= N_tset.N_tc_set && Stage3_started == 0 && Stage2_started == 1) {
+  if (sensorTs.getAverage() >= temp_set.ts && sensorTc.getAverage() >= temp_set.tc && Stage3_started == 0 && Stage2_started == 1) {
     START1 = START2 = Stage2_RTC_set = MTR_State = 0;
 
     // Turn All Output OFF
@@ -614,11 +624,11 @@ void loop() {
       WebSerial.println("Stage 3 Started");
       setStage(STAGE3);
       WebSerial.println("Stage 3 Status Send packet ");
-      F1_stg_3_timer = millis() - (N_st3.N_f1_st3_offtime * MINS);
+      F1_stg_3_timer = millis() - (stage3_params.fanOffTime * MINS);
     }
 
     // Turn ON F1 when time is over
-    if (MTR_State == 0 && (millis() - F1_stg_3_timer >= (N_st3.N_f1_st3_offtime * MINS))) {
+    if (MTR_State == 0 && (millis() - F1_stg_3_timer >= (stage3_params.fanOffTime * MINS))) {
       controller.writeDigitalOutput(FAN_IO, HIGH);
       
       WebSerial.println("Stage 3 F1 On");
@@ -631,7 +641,7 @@ void loop() {
     }
 
     // Turn OFF F1 when time is over
-    if (MTR_State == 1 && (millis() - F1_stg_3_timer >= (N_st3.N_f1_st3_ontime * MINS))) {
+    if (MTR_State == 1 && (millis() - F1_stg_3_timer >= (stage3_params.fanOnTime * MINS))) {
       controller.writeDigitalOutput(FAN_IO, LOW);
       
       WebSerial.println("Stage 3 F1 Off");
@@ -643,9 +653,9 @@ void loop() {
       F1_stg_3_timer = millis();
     }
 
-    asyncLoopSprinkler(S1_stg_3_timer, N_st3.N_s1_st3_offtime , N_st3.N_s1_st3_ontime);
+    asyncLoopSprinkler(S1_stg_3_timer, stage3_params.sprinklerOffTime , stage3_params.sprinklerOnTime);
 
-    // if (S1_state == 0 && (millis() - S1_stg_3_timer >= (N_st3.N_s1_st3_offtime * MINS))) {
+    // if (S1_state == 0 && (millis() - S1_stg_3_timer >= (stage3_params.sprinklerOffTime * MINS))) {
     //   controller.writeDigitalOutput(VALVE_IO, HIGH);
     //   S1_state = 1;
     //   WebSerial.println("Stage 3 S1 ON");
@@ -656,7 +666,7 @@ void loop() {
     //   S1_stg_3_timer = millis();
     // }
 
-    // if (S1_state == 1 && (millis() - S1_stg_3_timer >= (N_st3.N_s1_st3_ontime * MINS))) {
+    // if (S1_state == 1 && (millis() - S1_stg_3_timer >= (stage3_params.sprinklerOnTime * MINS))) {
     //   controller.writeDigitalOutput(VALVE_IO, LOW);
     //   S1_state = 0;
     //   WebSerial.println("Stage 3 S1 OFF with value of S1 ");
@@ -695,71 +705,95 @@ void callback(char *topic, byte *payload, unsigned int len) {
     WebSerial.println("Stage 2 Month set to: " + String(N_rtc.N_month));
   }
 
+  bool update_default_parameters = false;
+
   //F1 stg1 on/off time
   if (strcmp(topic, sub_f1_st1_ontime) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_st1.N_f1_st1_ontime = responseToFloat(payload, len);
-    WebSerial.println("F1 Stage 1 on time set to: " + String(N_st1.N_f1_st1_ontime) + " MINS");
+    stage1_params.fanOnTime = responseToFloat(payload, len);
+    WebSerial.println("F1 Stage 1 on time set to: " + String(stage1_params.fanOnTime) + " MINS");
+    
+    update_default_parameters = true;
   }
 
   if (strcmp(topic, sub_f1_st1_offtime) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_st1.N_f1_st1_offtime = responseToFloat(payload, len);
-    WebSerial.println("F1 Stage 1 off time set to: " + String(N_st1.N_f1_st1_offtime) + " MINS");
+    stage1_params.fanOffTime = responseToFloat(payload, len);
+    WebSerial.println("F1 Stage 1 off time set to: " + String(stage1_params.fanOffTime) + " MINS");
+        
+    update_default_parameters = true;
   }
 
   // F1 and S1 STAGE 2 on/off time
   if (strcmp(topic, sub_f1_st2_ontime) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_st2.N_f1_st2_ontime = responseToFloat(payload, len);
-    WebSerial.println("F1 Stage 2 on time set to: " + String(N_st2.N_f1_st2_ontime) + " MINS");
+    stage2_params.fanOnTime = responseToFloat(payload, len);
+    WebSerial.println("F1 Stage 2 on time set to: " + String(stage2_params.fanOnTime) + " MINS");
+        
+    update_default_parameters = true;
   }
 
   if (strcmp(topic, sub_f1_st2_offtime) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_st2.N_f1_st2_offtime = responseToFloat(payload, len);
-    WebSerial.println("F1 Stage 2 off time set to: " + String(N_st2.N_f1_st2_offtime) + " MINS");
+    stage2_params.fanOffTime = responseToFloat(payload, len);
+    WebSerial.println("F1 Stage 2 off time set to: " + String(stage2_params.fanOffTime) + " MINS");
+        
+    update_default_parameters = true;
   }
 
   if (strcmp(topic, sub_s1_st2_ontime) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_st2.N_s1_st2_ontime = responseToFloat(payload, len);
-    WebSerial.println("S1 Stage 2 on time set to: " + String(N_st2.N_s1_st2_ontime) + " MINS");
+    stage2_params.sprinklerOnTime = responseToFloat(payload, len);
+    WebSerial.println("S1 Stage 2 on time set to: " + String(stage2_params.sprinklerOnTime) + " MINS");
+        
+    update_default_parameters = true;
   }
 
   if (strcmp(topic, sub_s1_st2_offtime) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_st2.N_s1_st2_offtime = responseToFloat(payload, len);
-    WebSerial.println("S1 Stage 2 off time set to: " + String(N_st2.N_s1_st2_offtime) + " MINS");
+    stage2_params.sprinklerOffTime = responseToFloat(payload, len);
+    WebSerial.println("S1 Stage 2 off time set to: " + String(stage2_params.sprinklerOffTime) + " MINS");
+        
+    update_default_parameters = true;
   }
 
   // F1 and S1 STAGE 3 on/off time
   if (strcmp(topic, sub_f1_st3_ontime) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_st3.N_f1_st3_ontime = responseToFloat(payload, len);
-    WebSerial.println("F1 Stage 3 on time set to: " + String(N_st3.N_f1_st3_ontime) + " MINS");
+    stage3_params.fanOnTime = responseToFloat(payload, len);
+    WebSerial.println("F1 Stage 3 on time set to: " + String(stage3_params.fanOnTime) + " MINS");
+        
+    update_default_parameters = true;
   }
 
   if (strcmp(topic, sub_f1_st3_offtime) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_st3.N_f1_st3_offtime = responseToFloat(payload, len);
-    WebSerial.println("F1 Stage 3 off time set to: " + String(N_st3.N_f1_st3_offtime) + " MINS");
+    stage3_params.fanOffTime = responseToFloat(payload, len);
+    WebSerial.println("F1 Stage 3 off time set to: " + String(stage3_params.fanOffTime) + " MINS");
+        
+    update_default_parameters = true;
   }
 
   if (strcmp(topic, sub_s1_st3_ontime) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_st3.N_s1_st3_ontime = responseToFloat(payload, len);
-    WebSerial.println("S1 Stage 3 on time set to: " + String(N_st3.N_s1_st3_ontime) + " MINS");
+    stage3_params.sprinklerOnTime = responseToFloat(payload, len);
+    WebSerial.println("S1 Stage 3 on time set to: " + String(stage3_params.sprinklerOnTime) + " MINS");
+        
+    update_default_parameters = true;
   }
 
   if (strcmp(topic, sub_s1_st3_offtime) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_st3.N_s1_st3_offtime = responseToFloat(payload, len);
-    WebSerial.println("S1 Stage 3 off time set to: " + String(N_st3.N_s1_st3_offtime) + " MINS");
+    stage3_params.sprinklerOffTime = responseToFloat(payload, len);
+    WebSerial.println("S1 Stage 3 off time set to: " + String(stage3_params.sprinklerOffTime) + " MINS");
+        
+    update_default_parameters = true;
   }
 
   // Sub A and Sub B value update
   if (strcmp(topic, sub_A) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_SP.N_A = responseToFloat(payload, len);
-    // N_SP.N_A = atoi((char *)payload);
-    WebSerial.println("A set to: " + String(N_SP.N_A));
-    R_A = 1;
+    room.A = responseToFloat(payload, len);
+    // room.A = atoi((char *)payload);
+    WebSerial.println("A set to: " + String(room.A));
+        
+    update_default_parameters = true;
   }
 
   if (strcmp(topic, sub_B) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_SP.N_B = responseToFloat(payload, len);
-    WebSerial.println("B set to: " + String(N_SP.N_B));
-    R_B = 1;
+    room.B = responseToFloat(payload, len);
+    WebSerial.println("B set to: " + String(room.B));
+        
+    update_default_parameters = true;
   }
 
   // PID update
@@ -794,14 +828,18 @@ void callback(char *topic, byte *payload, unsigned int len) {
 
   // Target temperature Ts & Tc update
   if (strcmp(topic, sub_ts_set) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_tset.N_ts_set = responseToFloat(payload, len);
-    WebSerial.println("Ts Condition set to: " + String(N_tset.N_ts_set));
+    temp_set.ts = responseToFloat(payload, len);
+    WebSerial.println("Ts Condition set to: " + String(temp_set.ts));
+        
+    update_default_parameters = true;
   }
 
   if (strcmp(topic, sub_tc_set) == 0 && START1 == 0 && START2 == 0 && STOP == 0) {
-    N_tset.N_tc_set = responseToFloat(payload, len);
-    // Tc_cond = N_tset->N_tc_set;
-    WebSerial.println("Tc Condition set to: " + String(N_tset.N_tc_set));
+    temp_set.tc = responseToFloat(payload, len);
+    // Tc_cond = temp_set->tc;
+    WebSerial.println("Tc Condition set to: " + String(temp_set.tc));
+        
+    update_default_parameters = true;
   }
 
   // START
@@ -827,6 +865,8 @@ void callback(char *topic, byte *payload, unsigned int len) {
     N_chooseTs = responseToInt(payload, len);
     WebSerial.println("Ts is now IR" + String(N_chooseTs));
   }
+
+  if(update_default_parameters) controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
 }
 
 //// Stop button pressed ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -909,28 +949,6 @@ int responseToInt(byte *value, size_t len) {
   String puta_mierda_mal_parida;
   for (int i = 0; i < len; i++) puta_mierda_mal_parida += (char)value[i];
   return puta_mierda_mal_parida.toInt();
-}
-
-void setUpDefaultParameters(){
-  // Default parameters
-  N_st1.N_f1_st1_ontime = 1;
-  N_st1.N_f1_st1_offtime = 1;
-
-  N_st2.N_f1_st2_ontime = 1;
-  N_st2.N_f1_st2_offtime = 1;
-  N_st2.N_s1_st2_ontime = 1;
-  N_st2.N_s1_st2_offtime = 1;
-
-  N_st3.N_f1_st3_ontime = 10;
-  N_st3.N_f1_st3_offtime = 30;
-  N_st3.N_s1_st3_ontime = 1;
-  N_st3.N_s1_st3_offtime = 15;
-
-  N_SP.N_A = 0.5;
-  N_SP.N_B = 20;
-
-  N_tset.N_ts_set = 4;
-  N_tset.N_tc_set = 2;
 }
 
 void asyncLoopSprinkler(uint32_t &timer, uint32_t offTime, uint32_t onTime) {

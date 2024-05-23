@@ -16,6 +16,11 @@
 #endif
 #include "ESPAsyncWebServer.h"
 
+#define SSID_SIZE 32
+#define PASSWORD_SIZE 64
+#define HOSTNAME_SIZE 32
+#define IP_ADDRESS_SIZE 16
+
 class WIFI {
   public:
     void init(const char* ssid, const char* password, const char* hostname);
@@ -30,9 +35,9 @@ class WIFI {
 
     void DEBUG(const char *message);
   private:
-    char ssid[32];  
-    char password[64];
-    char hostname[32];  
+    char ssid[SSID_SIZE];  
+    char password[PASSWORD_SIZE];
+    char hostname[HOSTNAME_SIZE]; 
     bool last_connection_state = false;
 };
 #endif

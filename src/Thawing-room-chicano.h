@@ -8,7 +8,6 @@
 void stopRoutine();
 void updateTemperature();
 void setStage(int Stage);
-void setUpDefaultParameters();
 String addressToString(uint8_t *address);
 int responseToInt(byte *value, size_t len);
 float responseToFloat(byte *value, size_t len);
@@ -41,9 +40,6 @@ typedef struct { float PID_output; }                      data_PIDO;
 typedef struct { float PID_setpoint; }                    data_setpoint;
 
 typedef struct { float N_P; float N_I; float N_D; }       data_PID;
-
-// Ts and Tc target value
-typedef struct { float N_ts_set; float N_tc_set; }        data_tset;
 
 // fan (F1) STAGE 1 on and off time 
 typedef struct { float N_f1_st1_ontime; float N_f1_st1_offtime; }                 data_st1;
