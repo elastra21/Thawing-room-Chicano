@@ -162,7 +162,10 @@ void setup() {
   
   StageState last_state = controller.getLastState();
   WebSerial.println("Last state: " + String(last_state.stage) + " " + String(last_state.step));
-  if (last_state.stage != IDLE) currentState = last_state;
+  if (last_state.stage != IDLE) {
+    currentState = last_state;
+    handleInputs(currentState.stage);
+  }
 
   delay(750);
 }
@@ -325,52 +328,7 @@ void loop() {
     stg_2_pid_timer = millis();
   }
   
-
-  //---- START, DELAYED, STOP Button pressed ----////////////////////////////////////////////////
-  // delayed start push button or digital button pressed
-  if (controller.readDigitalInput(DLY_S_IO) == 1 || N_d_start == 1) {
-    START1 = 1;
-    WebSerial.println("Delayed Start Pressed");
-    N_d_start = 0;
-    F1_data.M_F1 = 2;
-    F2_data.M_F2 = 0;
-    S1_data.M_S1 = 2;
-
-    mqtt.publishData(m_F1, F1_data.M_F1);
-    WebSerial.println("Stage 1 init M_F1 stop published ");
-
-    mqtt.publishData(m_F2, F2_data.M_F2);
-    WebSerial.println("Stage 1 init M_F2 stop published ");
-
-    mqtt.publishData(m_S1, S1_data.M_S1);
-    WebSerial.println("Stage 1 init M_S1 stop published");
-  }
-
-  // start push button or digital button pressed
-  if (controller.readDigitalInput(START_IO) == 1 || N_start == 1) {
-    START2 = 1;
-    WebSerial.println("Start Pressed");
-    N_start = 0;
-    F1_data.M_F1 = 2;
-    F2_data.M_F2 = 0;
-    S1_data.M_S1 = 2;
-
-    mqtt.publishData(m_F1, F1_data.M_F1);
-    WebSerial.println("Stage 1 init M_F1 stop published ");
-
-    mqtt.publishData(m_F2, F2_data.M_F2);
-    WebSerial.println("Stage 1 init M_F2 stop published ");
-
-    mqtt.publishData(m_S1, S1_data.M_S1);
-    WebSerial.println("Stage 1 init M_S1 stop published");
-  }
-
-  // stop push button or digital button pressed
-  if (controller.readDigitalInput(STOP_IO) == 1 || N_stop == 1) {
-    STOP = 1;
-    WebSerial.println("Stop Pressed");
-    N_stop = 0;
-  }
+  handleInputs();
 
   //---- STOP ROUTINE ----///////////////////////////////////////////////////////////////////////
   if (STOP == 1) stopRoutine();
@@ -680,6 +638,55 @@ void loop() {
   }
 }
 
+void handleInputs(SystemState stage_to_init) {
+    //---- START, DELAYED, STOP Button pressed ----////////////////////////////////////////////////
+  // delayed start push button or digital button pressed
+  if (controller.readDigitalInput(DLY_S_IO) == 1 || N_d_start == 1 || stage_to_init == STAGE1) {
+    START1 = 1;
+    WebSerial.println("Delayed Start Pressed");
+    N_d_start = 0;
+    F1_data.M_F1 = 2;
+    F2_data.M_F2 = 0;
+    S1_data.M_S1 = 2;
+
+    mqtt.publishData(m_F1, F1_data.M_F1);
+    WebSerial.println("Stage 1 init M_F1 stop published ");
+
+    mqtt.publishData(m_F2, F2_data.M_F2);
+    WebSerial.println("Stage 1 init M_F2 stop published ");
+
+    mqtt.publishData(m_S1, S1_data.M_S1);
+    WebSerial.println("Stage 1 init M_S1 stop published");
+  }
+
+  // start push button or digital button pressed
+  if (controller.readDigitalInput(START_IO) == 1 || N_start == 1 || stage_to_init == STAGE2) {
+    START2 = 1;
+    WebSerial.println("Start Pressed");
+    N_start = 0;
+    F1_data.M_F1 = 2;
+    F2_data.M_F2 = 0;
+    S1_data.M_S1 = 2;
+
+    mqtt.publishData(m_F1, F1_data.M_F1);
+    WebSerial.println("Stage 1 init M_F1 stop published ");
+
+    mqtt.publishData(m_F2, F2_data.M_F2);
+    WebSerial.println("Stage 1 init M_F2 stop published ");
+
+    mqtt.publishData(m_S1, S1_data.M_S1);
+    WebSerial.println("Stage 1 init M_S1 stop published");
+  }
+
+  // stop push button or digital button pressed
+  if (controller.readDigitalInput(STOP_IO) == 1 || N_stop == 1) {
+    STOP = 1;
+    WebSerial.println("Stop Pressed");
+    N_stop = 0;
+  }
+
+}
+
 //// fct Callback ==> RECEIVE MQTT MESSAGES ////////////////////////////////////////////////////////////////////
 void callback(char *topic, byte *payload, unsigned int len) {
   WebSerial.println("Message arrived [" + String(topic) + "]");
@@ -930,7 +937,7 @@ String addressToString(uint8_t *address) {
   return formated_address;
 }
 
-void setStage(int Stage) {
+void setStage(SystemState Stage) {
   // if (stage_data.stage == Stage) return;
   currentState.stage = Stage;
   currentState.step = 0;

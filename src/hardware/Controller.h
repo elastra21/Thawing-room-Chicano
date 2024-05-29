@@ -46,7 +46,7 @@ enum SystemState {
 };
 
 struct StageState {
-    uint8_t stage;
+    SystemState stage;
     uint8_t step;
 };
 
