@@ -61,6 +61,7 @@ private:
     WIFI wifi;
     int ARRAY_SIZE = 7;
     bool ir_ts = false;
+    bool lora_tc = false;
     Preferences preferences;
 
     void setUpI2C();
@@ -93,6 +94,7 @@ public:
 
     void init();
     void setUpRTC();
+    bool isLoraTc();
     float getIRTemp();
     bool isRTCConnected();
     bool isTsContactLess();

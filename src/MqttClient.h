@@ -40,6 +40,7 @@
 #define sub_tsAvgSpan       "mfp2/TsAvgFifoSpan"  // in minutes the span of the fifo for Ts calculation
 #define sub_chooseTs        "mfp2/chooseTs"
 #define sub_coefPID         "mfp2/coefPID"
+#define LORA_TC             "mfp2/lora_TC"
 
 //------------ publish index    -------------------------------------------------------------------->
 #define m_F1                "mfp2/M_F1"

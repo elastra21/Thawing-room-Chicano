@@ -126,6 +126,7 @@ void MqttClient::subscribeRoutine() {
     mqttClient.subscribe(sub_tsAvgSpan, 1);
     mqttClient.subscribe(sub_chooseTs, 1);
     mqttClient.subscribe(sub_coefPID, 1);
+    mqttClient.subscribe(LORA_TC, 1);
     // mqttClient.subscribe(sub_address1, 1);
     // mqttClient.subscribe(sub_address2, 1);
     // mqttClient.subscribe(sub_address3, 1);

@@ -508,6 +508,14 @@ void callback(char *topic, byte *payload, unsigned int len) {
     logger.println("Ts is now IR" + String(is_rts_ir));
   }
 
+  // LoRaTc
+  if (mqtt.isTopicEqual(topic, LORA_TC)) {
+    if (!controller.isLoraTc()) return;
+    
+    TC = mqtt.responseToFloat(payload, len);
+    logger.println("LoRaTc ON" );
+  }
+
   if (currentState.stage != IDLE) return;
 
       // Delayed start timing
@@ -713,13 +721,12 @@ bool isValidTemperature(float temp, float minTemp, float maxTemp, const String& 
 
 void updateTemperature() {
   float ta_raw = controller.readTempFrom(TA_AI);
+  float tc_raw = controller.isLoraTc() ? TC : controller.readTempFrom(TC_AI);
   float ts_raw = controller.isTsContactLess() ? controller.getIRTemp() : controller.readTempFrom(TS_AI);
-  float tc_raw = controller.readTempFrom(TC_AI);
 
   TA = isValidTemperature(ta_raw, TA_MIN, TA_MAX, "TA") ? ta_raw : TA_DEF;
-  TS = isValidTemperature(ts_raw, TS_MIN, TS_MAX, "TS") ? ts_raw : TS_DEF;
   TC = isValidTemperature(tc_raw, TC_MIN, TC_MAX, "TC") ? tc_raw : TC_DEF;
-  // TI = controller.getOneWireTempFrom(controller.ADDRESS_TI);  // Assuming TI doesn't need validation\
+  TS = isValidTemperature(ts_raw, TS_MIN, TS_MAX, "TS") ? ts_raw : TS_DEF;
 
   getTempAvg();
 }
@@ -820,9 +827,9 @@ void publishTemperatures(DateTime &current_date) {
 
   // for debug purpose
   // logger.println("Average: " + String(temp_data.avg_ts));
-  // logger.println("Ts: " + String(TS));
-  // logger.println("TC: " + String(TC));
-  // logger.println("Ta: " + String(TA));
+  logger.println("Ts: " + String(TS));
+  logger.println("TC: " + String(TC));
+  logger.println("Ta: " + String(TA));
   // // logger.println("Nstart: " + String(remote_start));
   // // logger.println("Nstop: " + String(remote_stop));
   // logger.println("A variable: " + String(room.A));

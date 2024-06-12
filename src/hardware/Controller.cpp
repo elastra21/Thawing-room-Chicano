@@ -191,6 +191,10 @@ bool Controller::isTsContactLess() {
   return ir_ts;
 }
 
+bool Controller::isLoraTc() {
+  return lora_tc;
+}
+
 bool Controller::isRTCConnected() {
   return rtc.begin(&rtc_i2c);
 }
