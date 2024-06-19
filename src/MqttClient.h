@@ -87,10 +87,12 @@ class MqttClient {
     
     void DEBUG(const char *message);
   private:
+    uint16_t mqtt_port;
     char mqtt_id[MQTT_USERNAME_SIZE];  
     char mqtt_username[MQTT_USERNAME_SIZE];
     char mqtt_password[MQTT_USERNAME_SIZE];
     bool no_service_available = true;
+    char mqtt_domain[MQTT_USERNAME_SIZE];
     bool last_connection_state = false;
 
 };

@@ -8,6 +8,11 @@ PubSubClient mqttClient(esp32Client);
 // void subscribeReceive(char* topic, byte* payload, unsigned int length);
 
 void MqttClient::connect(const char *domain, uint16_t port, const char *id, const char *username, const char *password) {
+  strncpy(mqtt_domain, domain, sizeof(mqtt_domain) - 1);
+  mqtt_domain[sizeof(mqtt_domain) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
+
+  mqtt_port = port;
+
   strncpy(mqtt_id, id, sizeof(mqtt_id) - 1);
   mqtt_id[sizeof(mqtt_id) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
 
@@ -59,9 +64,9 @@ void MqttClient::reconnect() {
       lastReconnectAttempt = now;
 
       if (reconnectAttempts < 5) {
-        // mqttClient.flush();
-        // mqttClient.disconnect();
-        // mqttClient.setServer(mqtt_domain, mqtt_port);
+        mqttClient.flush();
+        mqttClient.disconnect();
+        mqttClient.setServer(mqtt_domain, mqtt_port);
         DEBUG("Attempting MQTT connection...");
 
         if (mqttClient.connect(mqtt_id, mqtt_username, mqtt_password)) {

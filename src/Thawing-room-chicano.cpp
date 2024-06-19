@@ -1,11 +1,3 @@
-#include <Wire.h>
-#include "hardware/WIFI.h"
-#include "hardware/config.h"
-#include <PID_v1.h>
-#include "secrets.h"
-#include <Arduino.h>
-#include "MqttClient.h"
-#include "hardware/Controller.h"
 #include "Thawing-room-chicano.h"
 
 data_rtc N_rtc;  // structure data_rtc from the config file is renamed N_rtc
@@ -72,6 +64,10 @@ bool MTR2_State = 0; // State of the motor that control the Fan F2
 
 // State of the Stage (data = 1, 2 or 3)
 StageState currentState = {IDLE, 0};
+
+Button start_btn(START_IO); // Connect your button between pin 2 and GND
+Button stop_btn(STOP_IO); // Connect your button between pin 3 and GND
+Button d_start_button(DLY_S_IO); // Connect your button between pin 4 and GND
 
 // Parameters of Stage 2
 uint8_t Stage2_hour = 0;
@@ -150,6 +146,10 @@ void setup() {
 
   mqtt.connect(IP_ADDRESS, PORT, MQTT_ID, USERNAME, MQTT_PASSWORD);
   mqtt.setCallback(callback);
+
+  start_btn.begin();
+  stop_btn.begin();
+  d_start_button.begin();
 
   // xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
   //Turn the PID on
@@ -641,7 +641,7 @@ void loop() {
 void handleInputs(SystemState stage_to_init) {
     //---- START, DELAYED, STOP Button pressed ----////////////////////////////////////////////////
   // delayed start push button or digital button pressed
-  if (controller.readDigitalInput(DLY_S_IO) == 1 || N_d_start == 1 || stage_to_init == STAGE1) {
+  if (d_start_button.released() || N_d_start == 1 || stage_to_init == STAGE1) {
     START1 = 1;
     WebSerial.println("Delayed Start Pressed");
     N_d_start = 0;
@@ -660,7 +660,7 @@ void handleInputs(SystemState stage_to_init) {
   }
 
   // start push button or digital button pressed
-  if (controller.readDigitalInput(START_IO) == 1 || N_start == 1 || stage_to_init == STAGE2) {
+  if (start_btn.released() || N_start == 1 || stage_to_init == STAGE2) {
     START2 = 1;
     WebSerial.println("Start Pressed");
     N_start = 0;
@@ -679,7 +679,7 @@ void handleInputs(SystemState stage_to_init) {
   }
 
   // stop push button or digital button pressed
-  if (controller.readDigitalInput(STOP_IO) == 1 || N_stop == 1) {
+  if (stop_btn.released() || N_stop == 1) {
     STOP = 1;
     WebSerial.println("Stop Pressed");
     N_stop = 0;

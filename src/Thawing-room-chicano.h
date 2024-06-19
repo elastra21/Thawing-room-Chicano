@@ -1,6 +1,15 @@
 #ifndef THAWING_ROOM_H
 #define THAWING_ROOM_H
+#include <Wire.h>
+#include <PID_v1.h>
+#include <Button.h>
+#include "secrets.h"
 #include <Arduino.h>
+#include "MqttClient.h"
+#include "hardware/WIFI.h"
+#include "hardware/config.h"
+#include "hardware/Controller.h"
+
 
 
 //---- Function declaration ----/////////////////////////////////////////////////////////////////////////////
