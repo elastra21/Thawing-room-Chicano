@@ -70,50 +70,50 @@ bool valToBool(String value){
 
 
 void WIFI::updateJsonFromForm(AsyncWebServerRequest *request, JsonVariant json) {
-    int params = request->params();
-    for (int i = 0; i < params; i++) {
-        AsyncWebParameter* p = request->getParam(i);
-        String keyPath = p->name();
-        std::vector<String> tokens;
-        int last = 0, next = 0;
-        while ((next = keyPath.indexOf("|", last)) != -1) {
-            tokens.push_back(keyPath.substring(last, next));
-            last = next + 1;
-        }
-        tokens.push_back(keyPath.substring(last));
-
-        JsonVariant cur = json;
-        for (size_t j = 0; j < tokens.size(); j++) {
-          if (j == tokens.size() - 1) {
-            // Handle the array index if it exists
-            String val = p->value();
-            const bool valIsBool = isBoolValue(val);
-            
-            if (tokens[j][0] == '[') {
-              int index = tokens[j].substring(1, tokens[j].length() - 1).toInt();
-              cur[index] = valIsBool ? valToBool(val) : val;
-            } 
-            else {
-              if (valIsBool){
-              bool bool_value = valToBool(val);
-              cur[tokens[j]] = bool_value;
-              } else {
-                cur[tokens[j]] = val;
-              }
-                
-            }
-          } 
-          else {
-            // Navigate through the JSON
-            if (tokens[j][0] == '[') {
-              int index = tokens[j].substring(1, tokens[j].length() - 1).toInt();
-              cur = cur[index];
-            } else {
-              cur = cur[tokens[j]];
-            }
-          }
-        }
+  int params = request->params();
+  for (int i = 0; i < params; i++) {
+    AsyncWebParameter* p = request->getParam(i);
+    String keyPath = p->name();
+    std::vector<String> tokens;
+    int last = 0, next = 0;
+    while ((next = keyPath.indexOf("|", last)) != -1) {
+      tokens.push_back(keyPath.substring(last, next));
+      last = next + 1;
     }
+    tokens.push_back(keyPath.substring(last));
+
+    JsonVariant cur = json;
+    for (size_t j = 0; j < tokens.size(); j++) {
+      if (j == tokens.size() - 1) {
+        // Handle the array index if it exists
+        String val = p->value();
+        const bool valIsBool = isBoolValue(val);
+        
+        if (tokens[j][0] == '[') {
+          int index = tokens[j].substring(1, tokens[j].length() - 1).toInt();
+          cur[index] = valIsBool ? valToBool(val) : val;
+        } 
+        else {
+          if (valIsBool){
+          bool bool_value = valToBool(val);
+          cur[tokens[j]] = bool_value;
+          } else {
+            cur[tokens[j]] = val;
+          }
+            
+        }
+      } 
+      else {
+        // Navigate through the JSON
+        if (tokens[j][0] == '[') {
+          int index = tokens[j].substring(1, tokens[j].length() - 1).toInt();
+          cur = cur[index];
+        } else {
+          cur = cur[tokens[j]];
+        }
+      }
+    }
+  }
 }
 
 

@@ -195,6 +195,10 @@ bool Controller::isLoraTc() {
   return lora_tc;
 }
 
+void Controller::setLoraTc(bool value) {
+  lora_tc = value;
+}
+
 bool Controller::isRTCConnected() {
   return rtc.begin(&rtc_i2c);
 }
@@ -352,14 +356,12 @@ void Controller::runConfigFile(char* ssid, char* password, char* hostname, char*
   // if (doc.containsKey("TOPIC")) strlcpy(prefix_topic, doc["TOPIC"], HOSTNAME_SIZE);
   if (doc.containsKey("MQTT_ID")) strlcpy(mqtt_id, doc["MQTT_ID"], MQTT_ID_SIZE);
   if (doc.containsKey("MQTT_PASSWORD")) strlcpy(mqtt_password, doc["MQTT_PASSWORD"], MQTT_PASSWORD_SIZE);
-  // "IR_TS": {
-  //   "eneable": true,
-  //   "sample_size": 7
-  // }
   if(doc.containsKey("IR_TS")){
     ir_ts = doc["IR_TS"]["eneable"];
     ARRAY_SIZE = doc["IR_TS"]["sample_size"];
   }
+
+  if(doc.containsKey("LoRa_Tc")) setLoraTc(doc["LoRa_Tc"]);
   // logging all values
   // DEBUG("SSID: " + String(ssid));
   // DEBUG("WIFI_PASSWORD: " + String(password));

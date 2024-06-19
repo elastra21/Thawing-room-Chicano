@@ -12,5 +12,6 @@
   "IR_TS": {
     "eneable": true,
     "sample_size": 7
-  }
+  },
+  "LoRa_Tc":false
 }

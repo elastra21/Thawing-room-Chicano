@@ -491,7 +491,7 @@ void idle(){
 
 //// fct Callback ==> RECEIVE MQTT MESSAGES ////////////////////////////////////////////////////////////////////
 void callback(char *topic, byte *payload, unsigned int len) {
-  logger.println("Message arrived [" + String(topic) + "]");
+  logger.println("Message arrived [" + String(topic) + "]" );
 
    // STOP
   if (mqtt.isTopicEqual(topic, sub_stop) ) {
@@ -511,10 +511,20 @@ void callback(char *topic, byte *payload, unsigned int len) {
   // LoRaTc
   if (mqtt.isTopicEqual(topic, LORA_TC)) {
     if (!controller.isLoraTc()) return;
-    
-    TC = mqtt.responseToFloat(payload, len);
-    logger.println("LoRaTc ON" );
+
+    const float tc_raw = mqtt.responseToFloat(payload, len);
+    TC = isValidTemperature(tc_raw, TC_MIN, TC_MAX, "TC") ? tc_raw : TC_DEF;
+
+    logger.println(String(TC));
   }
+
+  if (mqtt.isTopicEqual(topic, IS_TC_LORA)) {
+    controller.setLoraTc(mqtt.responseToInt(payload, len));
+
+    // TODO : Add a function to save the value in the EEPROM
+    logger.println("Lora TC is now: " + String(controller.isLoraTc()));
+  }
+  
 
   if (currentState.stage != IDLE) return;
 
@@ -713,7 +723,7 @@ void stopRoutine() {
 }
 
 bool isValidTemperature(float temp, float minTemp, float maxTemp, const String& sensorName) {
-  bool is_valid = temp < minTemp || temp > maxTemp;
+  bool is_valid = temp >= minTemp && temp <= maxTemp;
   if(is_valid) sendTemperaturaAlert(temp, sensorName);
 
   return is_valid;
@@ -721,11 +731,12 @@ bool isValidTemperature(float temp, float minTemp, float maxTemp, const String& 
 
 void updateTemperature() {
   float ta_raw = controller.readTempFrom(TA_AI);
-  float tc_raw = controller.isLoraTc() ? TC : controller.readTempFrom(TC_AI);
+  float tc_raw = controller.readTempFrom(TC_AI);
   float ts_raw = controller.isTsContactLess() ? controller.getIRTemp() : controller.readTempFrom(TS_AI);
-
+  
+  
   TA = isValidTemperature(ta_raw, TA_MIN, TA_MAX, "TA") ? ta_raw : TA_DEF;
-  TC = isValidTemperature(tc_raw, TC_MIN, TC_MAX, "TC") ? tc_raw : TC_DEF;
+  if (!controller.isLoraTc()) TC = isValidTemperature(tc_raw, TC_MIN, TC_MAX, "TC") ? tc_raw : TC_DEF;
   TS = isValidTemperature(ts_raw, TS_MIN, TS_MAX, "TS") ? ts_raw : TS_DEF;
 
   getTempAvg();

@@ -97,40 +97,9 @@ void MqttClient::setCallback(std::function<void(char *, uint8_t *, unsigned int)
 void MqttClient::subscribeRoutine() {
   if (mqttClient.connect(mqtt_username)) {
     DEBUG("connected, subscribing");
-    if (!mqttClient.subscribe(sub_hours, 1)) DEBUG("sub hours failed !");
-    if (!mqttClient.subscribe(sub_minutes, 1)) DEBUG("sub hours failed !");
-    if (!mqttClient.subscribe(sub_day, 1)) DEBUG("sub hours failed !");
-    if (!mqttClient.subscribe(sub_month, 1)) DEBUG("sub hours failed !");
-    if (!mqttClient.subscribe(sub_f1_st1_ontime, 1)) DEBUG("sub hours failed !");
-    if (!mqttClient.subscribe(sub_f1_st1_offtime, 1)) DEBUG("sub hours failed !");
-    if (!mqttClient.subscribe(sub_f1_st2_ontime, 1)) DEBUG("sub hours failed !");
-    mqttClient.subscribe(sub_f1_st2_offtime, 1);
-    mqttClient.subscribe(sub_s1_st2_ontime, 1);
-    mqttClient.subscribe(sub_s1_st2_offtime, 1);
-    mqttClient.subscribe(sub_f1_st3_ontime, 1);
-    mqttClient.subscribe(sub_f1_st3_offtime, 1);
-    mqttClient.subscribe(sub_s1_st3_ontime, 1);
-    mqttClient.subscribe(sub_s1_st3_offtime, 1);
-    mqttClient.subscribe(sub_A, 1);
-    if (!mqttClient.subscribe(sub_B, 1)) DEBUG("sub hours failed !");
-    mqttClient.subscribe(sub_P, 1);
-    mqttClient.subscribe(sub_I, 1);
-    mqttClient.subscribe(sub_D, 1);
-    mqttClient.subscribe(sub_tc_set, 1);
-    mqttClient.subscribe(sub_ts_set, 1);
-    mqttClient.subscribe(sub_start, 1);
-    mqttClient.subscribe(sub_d_start, 1);
-    mqttClient.subscribe(sub_stop, 1);
-    mqttClient.subscribe(sub_stop, 1);
-    mqttClient.subscribe(sub_avgTiming, 1);
-    mqttClient.subscribe(sub_tsAvgSpan, 1);
-    mqttClient.subscribe(sub_chooseTs, 1);
-    mqttClient.subscribe(sub_coefPID, 1);
-    mqttClient.subscribe(LORA_TC, 1);
-    // mqttClient.subscribe(sub_address1, 1);
-    // mqttClient.subscribe(sub_address2, 1);
-    // mqttClient.subscribe(sub_address3, 1);
-    // mqttClient.subscribe(sub_address4, 1);
+    
+    for (int i = 0; i < SUB_ARRAY_SIZE; i++) mqttClient.subscribe(topics[i]);
+
     DEBUG("subscribing done");
   } else DEBUG("not connected, subscribing aborted");
 }

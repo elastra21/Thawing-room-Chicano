@@ -41,6 +41,9 @@
 #define sub_chooseTs        "mfp2/chooseTs"
 #define sub_coefPID         "mfp2/coefPID"
 #define LORA_TC             "mfp2/lora_TC"
+#define IS_TC_LORA          "mfp2/isTcLora"
+
+#define SUB_ARRAY_SIZE 31
 
 //------------ publish index    -------------------------------------------------------------------->
 #define m_F1                "mfp2/M_F1"
@@ -106,6 +109,40 @@ class MqttClient {
     bool last_connection_state = false;
     std::function<void ()> callback_connect = NULL;
 
+    // map list of suscribed topics
+    const char* topics[SUB_ARRAY_SIZE] = {
+      sub_hours,
+      sub_minutes,
+      sub_day,
+      sub_month,
+      sub_f1_st1_ontime,
+      sub_f1_st1_offtime,
+      sub_f1_st2_ontime,
+      sub_f1_st2_offtime,
+      sub_s1_st2_ontime,
+      sub_s1_st2_offtime,
+      sub_f1_st3_ontime,
+      sub_f1_st3_offtime,
+      sub_s1_st3_ontime,
+      sub_s1_st3_offtime,
+      sub_A,
+      sub_B,
+      sub_ts_set,
+      sub_tc_set,
+      sub_start,
+      sub_d_start,
+      sub_stop,
+      sub_TempAcqDelay,
+      sub_P,
+      sub_I,
+      sub_D,
+      sub_avgTiming,
+      sub_tsAvgSpan,
+      sub_chooseTs,
+      sub_coefPID,
+      LORA_TC,
+      IS_TC_LORA
+    };
 
 };
 #endif

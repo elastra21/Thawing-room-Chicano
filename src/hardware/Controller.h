@@ -100,6 +100,7 @@ public:
     bool isTsContactLess();
     DateTime getDateTime();
     void setUpOneWireProbes(); // -----> NOT DEFINED YET
+    void setLoraTc(bool value);
     void updateProbesTemperatures(); // ----> NOT DEFINED YET
     float readTempFrom(uint8_t channel);
     bool readDigitalInput(uint8_t input);
