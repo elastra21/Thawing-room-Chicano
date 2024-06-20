@@ -520,8 +520,7 @@ void callback(char *topic, byte *payload, unsigned int len) {
 
   if (mqtt.isTopicEqual(topic, IS_TC_LORA)) {
     controller.setLoraTc(mqtt.responseToInt(payload, len));
-
-    // TODO : Add a function to save the value in the EEPROM
+    
     logger.println("Lora TC is now: " + String(controller.isLoraTc()));
   }
   

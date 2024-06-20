@@ -125,6 +125,44 @@ public:
 
     //Logger
     void DEBUG(const char *message);
+
+    template <typename T> 
+    bool updateConfigJson(const char* param, T value, String file = "/config.txt"){
+        // Abre el archivo de configuración existente
+        File configFile = SPIFFS.open(file, FILE_READ);
+        if (!configFile) {
+            DEBUG("Error al abrir el archivo de configuración para lectura");
+            return false;
+        }
+
+        // Parsea el objeto JSON del archivo
+        StaticJsonDocument<1024> doc; // Cambiado a StaticJsonDocument
+        auto error = deserializeJson(doc, configFile);
+        if (error) {
+            Serial.println("Error al parsear el archivo de configuración");
+            return false;
+        }
+
+        // Update the values
+        doc[param] = value;
+
+        // Open file for writing
+        configFile = SPIFFS.open(file, FILE_WRITE);
+        if (!configFile) {
+            DEBUG("Error al abrir el archivo de configuración para escritura");
+            return false;
+        }
+
+        // Serializa el JSON al archivo
+        if (serializeJson(doc, configFile) == 0) {
+            DEBUG("Error al escribir en el archivo de configuración");
+            return false;
+        }
+
+        configFile.close();
+        return true;
+    }
+
 };
 
 #endif

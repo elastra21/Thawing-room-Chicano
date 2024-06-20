@@ -196,6 +196,7 @@ bool Controller::isLoraTc() {
 }
 
 void Controller::setLoraTc(bool value) {
+  updateConfigJson("LoRa_Tc", value);
   lora_tc = value;
 }
 
