@@ -191,6 +191,11 @@ bool Controller::isTsContactLess() {
   return ir_ts;
 }
 
+void Controller::setTsContactLess(bool value) {
+  updateConfigJson("IR_TS", value);
+  ir_ts = value;
+}
+
 bool Controller::isLoraTc() {
   return lora_tc;
 }

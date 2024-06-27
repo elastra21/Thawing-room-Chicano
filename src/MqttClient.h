@@ -42,8 +42,10 @@
 #define sub_coefPID         "mfp2/coefPID"
 #define LORA_TC             "mfp2/lora_TC"
 #define IS_TC_LORA          "mfp2/isTcLora"
+#define IS_TS_IR            "mfp2/isTsIR"
 
-#define SUB_ARRAY_SIZE 31
+
+#define SUB_ARRAY_SIZE 32
 
 //------------ publish index    -------------------------------------------------------------------->
 #define m_F1                "mfp2/M_F1"
@@ -75,6 +77,8 @@
 #define ACK_TS              "mfp2/ack_Ts"
 #define ACK_TC              "mfp2/ack_Tc"
 #define SPOILED_SENSOR      "mfp2/spoiled_sensor"
+#define IR_TS               "mfp2/IR_TS"
+
 
 
 
@@ -141,7 +145,8 @@ class MqttClient {
       sub_chooseTs,
       sub_coefPID,
       LORA_TC,
-      IS_TC_LORA
+      IS_TC_LORA,
+      IS_TS_IR,
     };
 
 };

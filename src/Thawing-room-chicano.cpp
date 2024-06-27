@@ -523,6 +523,13 @@ void callback(char *topic, byte *payload, unsigned int len) {
     
     logger.println("Lora TC is now: " + String(controller.isLoraTc()));
   }
+
+  // IR_TS
+  if (mqtt.isTopicEqual(topic, IS_TS_IR)) {
+    controller.setTsContactLess(mqtt.responseToInt(payload, len));
+
+    logger.println("Ts is now: " + String(controller.isTsContactLess()));
+  }
   
 
   if (currentState.stage != IDLE) return;

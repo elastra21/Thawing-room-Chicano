@@ -102,6 +102,7 @@ public:
     void setUpOneWireProbes(); // -----> NOT DEFINED YET
     void setLoraTc(bool value);
     void updateProbesTemperatures(); // ----> NOT DEFINED YET
+    void setTsContactLess(bool value);
     float readTempFrom(uint8_t channel);
     bool readDigitalInput(uint8_t input);
     uint64_t readAnalogInput(uint8_t input);
