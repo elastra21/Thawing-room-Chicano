@@ -101,6 +101,7 @@ void Controller::setUpRTC() {
   }
 }
 
+
 bool Controller::isRTCConnected() {
   return rtc.begin(&rtc_i2c);
 }

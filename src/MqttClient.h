@@ -40,6 +40,9 @@
 #define sub_chooseTs        "mfp2/chooseTs"
 #define sub_coefPID         "mfp2/coefPID"
 
+
+#define SUB_ARRAY_SIZE 29
+
 //------------ publish index    -------------------------------------------------------------------->
 #define m_F1                "mfp2/M_F1"
 #define m_F2                "mfp2/M_F2"
@@ -94,6 +97,38 @@ class MqttClient {
     bool no_service_available = true;
     char mqtt_domain[MQTT_USERNAME_SIZE];
     bool last_connection_state = false;
+
+    const char* topics[SUB_ARRAY_SIZE] = {
+      sub_hours,
+      sub_minutes,
+      sub_day,
+      sub_month,
+      sub_f1_st1_ontime,
+      sub_f1_st1_offtime,
+      sub_f1_st2_ontime,
+      sub_f1_st2_offtime,
+      sub_s1_st2_ontime,
+      sub_s1_st2_offtime,
+      sub_f1_st3_ontime,
+      sub_f1_st3_offtime,
+      sub_s1_st3_ontime,
+      sub_s1_st3_offtime,
+      sub_A,
+      sub_B,
+      sub_ts_set,
+      sub_tc_set,
+      sub_start,
+      sub_d_start,
+      sub_stop,
+      sub_TempAcqDelay,
+      sub_P,
+      sub_I,
+      sub_D,
+      sub_avgTiming,
+      sub_tsAvgSpan,
+      sub_chooseTs,
+      sub_coefPID,
+    };
 
 };
 #endif

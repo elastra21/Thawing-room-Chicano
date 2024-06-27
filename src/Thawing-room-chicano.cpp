@@ -867,11 +867,13 @@ void callback(char *topic, byte *payload, unsigned int len) {
     WebSerial.println("stop BUTTON PRESSED ON NODE RED" + String(N_stop));
   }
 
-  // Choose TS
-  if (strcmp(topic, sub_chooseTs) == 0) {
-    N_chooseTs = responseToInt(payload, len);
-    WebSerial.println("Ts is now IR" + String(N_chooseTs));
-  }
+  // // Choose TS
+  // if (strcmp(topic, sub_chooseTs) == 0) {
+  //   N_chooseTs = responseToInt(payload, len);
+  //   WebSerial.println("Ts is now IR" + String(N_chooseTs));
+
+  //   // controller.set
+  // }
 
   if(update_default_parameters) controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
 }
