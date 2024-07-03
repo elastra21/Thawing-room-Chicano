@@ -11,7 +11,7 @@
   "TIME_ZONE_OFFSET_HRS": "home/bedroom/temperature",
   "IR_TS": {
     "eneable": false,
-    "sample_size": 7
+    "sample_size": 8
   },
   "LoRa_Tc":false
 }
