@@ -2,8 +2,16 @@
 #define LOGGER_H
 
 #define WebSerial Serial
+// #define SD_Logs true
 
+#include "SD.h"
+// #include <WS_V2.h>
 #include <Arduino.h>
+
+#define SCK   36                //SCK on SPI3
+#define MOSI  35                //MISO on SPI3 
+#define MISO  37                //MOSI on SPI3
+#define SS    38
 
 #ifdef WebSerial
   // No incluir WebSerialLite.h
@@ -18,6 +26,8 @@ private:
     #else
         #define outputStream Serial
     #endif
+
+    void setupSD();
 
 public:
     void init(unsigned long baudRate);

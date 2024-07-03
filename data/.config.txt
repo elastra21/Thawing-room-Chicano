@@ -3,14 +3,15 @@
   "WIFI_PASSWORD": "SardinaMacarena2021",
   "HOST_NAME": "esp32-2",
   "IP_ADDRESS": "192.168.100.52",
-  "PORT": "1883",
+  "PORT": 1883,
   "PASS": "",
   "MQTT_ID": "Chicano_MFP",
   "USERNAME": "chicano",
   "MQTT_PASSWORD": "nomameshugo",
   "TIME_ZONE_OFFSET_HRS": "home/bedroom/temperature",
   "IR_TS": {
-    "eneable": false,
-    "sample_size": "7"
-  }
+    "eneable": true,
+    "sample_size": 7
+  },
+  "LoRa_Tc":false
 }
