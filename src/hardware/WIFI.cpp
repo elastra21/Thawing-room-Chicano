@@ -130,11 +130,9 @@ void WIFI::init(const char* ssid, const char* password, const char* hostname){
 
 void WIFI::setUpWebServer(bool brigeSerial){
   /*use mdns for host name resolution*/
-  if (!MDNS.begin(hostname)){ // http://esp32.local
+  while (!MDNS.begin(hostname)){ // http://esp32.local
     DEBUG("Error setting up MDNS responder!");
-    while (1){
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
   
   DEBUG("mDNS responder started Pinche Hugo");

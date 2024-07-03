@@ -79,10 +79,15 @@ void Controller::setUpI2C() {
 }
 
 void Controller::setUpRTC() {
-  if (!rtc.begin(&rtc_i2c)) {
-    DEBUG("Couldn't find RTC");
-    while (1);
+  uint32_t currentMillis = millis();
+  const uint16_t timeout = 120; //secs
+  while (!rtc.begin(&rtc_i2c)){
+    DEBUG(("Couldn't find RTC, restarting in "+ String(timeout - (millis() - currentMillis)/1000) + " seconds...").c_str());
+    delay(1000);
+    if(millis() - currentMillis > timeout) ESP.restart();
   }
+
+
 
   // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
@@ -112,9 +117,9 @@ void Controller::setUpRTC() {
 void Controller::setUpIRTc() {
   DEBUG("Inicializando MLX90640...");
 
-  if (!mlx.begin(MLX90640_I2CADDR_DEFAULT, &rtc_i2c)) {
+  while (!mlx.begin(MLX90640_I2CADDR_DEFAULT, &rtc_i2c)) {
     DEBUG("¡Error al iniciar el sensor MLX90640!");
-    while (1);
+    delay(1000);
   }
 
   DEBUG("Sensor MLX90640 iniciado correctamente");
