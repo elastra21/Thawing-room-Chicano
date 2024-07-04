@@ -80,6 +80,12 @@ Controller controller;
 TaskHandle_t communicationTask;
 PID air_in_feed_PID(&pid_input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);  // DIRECT or REVERSE
 
+void printStackUsage() {
+  UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(NULL);
+  logger.print("Stack high water mark: ");
+  logger.println(String(highWaterMark));
+}
+
 void backgroundTasks(void* pvParameters) {
   for (;;) {
     controller.WiFiLoop();
@@ -89,9 +95,13 @@ void backgroundTasks(void* pvParameters) {
       controller.loopOTA();
     }
 
-    vTaskDelay(20 / portTICK_PERIOD_MS);
+    printStackUsage(); // Monitorea el uso de la pila
+
+    vTaskDelay(200 / portTICK_PERIOD_MS);
   }
 }
+
+
 
 void setup() {
   controller.init();
@@ -129,7 +139,7 @@ void setup() {
   mqtt.onConnect(onMQTTConnect);
 
 
-  xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 10000, NULL, 1, &communicationTask, 0);
+  xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 12000, NULL, 1, &communicationTask, 0);
 
   logger.println("===========> Reboted!! <===========");
 
