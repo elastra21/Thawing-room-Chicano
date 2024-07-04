@@ -84,8 +84,8 @@ void MqttClient::loop() {
   if (!isServiceAvailable()) return;
   if (!mqttClient.connected()) reconnect();
   
-  // delay(100);
-  vTaskDelay(100 / portTICK_PERIOD_MS);
+  delay(100);
+  // vTaskDelay(100 / portTICK_PERIOD_MS);
   mqttClient.loop();
 }
 

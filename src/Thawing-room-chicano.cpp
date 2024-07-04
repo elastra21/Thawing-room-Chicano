@@ -91,16 +91,14 @@ void backgroundTasks(void* pvParameters) {
     controller.WiFiLoop();
     
     if(controller.isWiFiConnected()) {
-      mqtt.loop();
       controller.loopOTA();
     }
 
-    printStackUsage(); // Monitorea el uso de la pila
+    // printStackUsage(); // Monitorea el uso de la pila
 
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
   }
 }
-
 
 
 void setup() {
@@ -159,6 +157,10 @@ void loop() {
   if (!controller.isRTCConnected()) {  
     logger.println("RTC not connected"); 
     while (true) delay(1000);
+  }
+
+  if(controller.isWiFiConnected()) {
+    mqtt.loop();
   }
 
   updateTemperature();
