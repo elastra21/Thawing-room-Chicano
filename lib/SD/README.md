@@ -40,3 +40,4 @@ SD runs on SPI, and SD_MMC uses the SDMMC hardware bus on the ESP32.
 **Can I change the CS pin?**
 
 Yes, just use: `SD.begin(CSpin)`
+# SD_ZDAuto

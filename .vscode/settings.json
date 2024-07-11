@@ -2,6 +2,11 @@
     "idf.port": "/dev/cu.SLAB_USBtoUART",
     "files.associations": {
         "*.tcc": "cpp",
-        "fstream": "cpp"
+        "fstream": "cpp",
+        "unordered_map": "cpp",
+        "istream": "cpp",
+        "ostream": "cpp",
+        "sstream": "cpp",
+        "new": "cpp"
     }
 }

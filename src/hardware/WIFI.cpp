@@ -183,8 +183,10 @@ void WIFI::setUpWebServer(bool brigeSerial){
     html += generateHTMLForJson(doc);
     
     html += "<input type='submit' value='Actualizar'></form>"
-            "<br><a href='/download-config'><button type='button'>Descargar JSON</button></a>"
-            "</body></html>";
+                "<br><a href='/download-config'><button type='button'>Descargar JSON</button></a>"
+                "<br><a href='/toggle-output'><button type='button'>Toggle Output</button></a>"
+                "</body></html>";
+
     request->send(200, "text/html", html);
   });
 
@@ -223,6 +225,15 @@ void WIFI::setUpWebServer(bool brigeSerial){
     }
   });
 
+  server.on("/toggle-output", HTTP_GET, [&](AsyncWebServerRequest *request) {
+    if (logger.currentOutput == Logger::HW_SERIAL) {
+      logger.setOutput(Logger::WEBSERIAL);
+    } else {
+      logger.setOutput(Logger::HW_SERIAL);
+    }
+    request->send(200, "text/plain", "Output toggled");
+  });
+
   server.on("/download-config", HTTP_GET, [](AsyncWebServerRequest *request) {
     if (SPIFFS.exists("/config.txt")) {
         request->send(SPIFFS, "/config.txt", "application/json", true);
@@ -241,10 +252,8 @@ void WIFI::setUpWebServer(bool brigeSerial){
   });
   
   if (brigeSerial) {
-    #ifdef WebSerial_h // Verifica si WebSerialLite.h está incluido 
-      WebSerial.begin(&server);
-      WebSerial.onMessage(recvMsg);
-    #endif // WebSerialLite_h
+    WebSerial.begin(&server);
+    WebSerial.onMessage(recvMsg);
   }
   server.begin();
 }

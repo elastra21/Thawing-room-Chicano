@@ -23,6 +23,7 @@ void MqttClient::connect(const char *domain, uint16_t port, const char *id, cons
   mqttClient.setServer(domain, port);
   if (mqttClient.connect(mqtt_id, mqtt_username, mqtt_password)) {
     DEBUG("Connection has been established, well done");
+    if(callback_connect != NULL) callback_connect();
     subscribeRoutine();
     no_service_available = false;
   } else {

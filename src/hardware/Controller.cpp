@@ -28,10 +28,10 @@ void Controller::init() {
 }
 
 void Controller::setUpLogger() {
-  #ifdef WebSerial
+  // #ifdef WebSerial
     logger.init(115200);
     DEBUG("Logger set up");
-  #endif
+  // #endif
 }
 
 void Controller::setUpIOS() {
@@ -86,10 +86,6 @@ void Controller::setUpRTC() {
     delay(1000);
     if(millis() - currentMillis > timeout) ESP.restart();
   }
-
-
-
-  // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
   DateTime now = rtc.now();
   if (true) {
@@ -216,6 +212,9 @@ bool Controller::isRTCConnected() {
 
 DateTime Controller::getDateTime() {
   return rtc.now();
+  // DateTime current_date(__DATE__, __TIME__);
+  // return current_date;
+   
 }
 
 uint64_t Controller::readAnalogInput(uint8_t input) {
@@ -373,6 +372,7 @@ void Controller::runConfigFile(char* ssid, char* password, char* hostname, char*
   }
 
   if(doc.containsKey("LoRa_Tc")) setLoraTc(doc["LoRa_Tc"]);
+  if(doc.containsKey("WEB_SERIAL")) logger.setOutput(doc["WEB_SERIAL"]);
   // logging all values
   // DEBUG("SSID: " + String(ssid));
   // DEBUG("WIFI_PASSWORD: " + String(password));

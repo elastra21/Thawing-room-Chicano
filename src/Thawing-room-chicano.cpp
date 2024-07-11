@@ -54,11 +54,9 @@ uint32_t sprinkler_1_stg_1_timer = 0UL;         // S1 stage 2 timing
 uint32_t sprinkler_1_stg_2_timer = 0UL;         // S1 stage 2 timing
 uint32_t sprinkler_1_stg_3_timer = 0UL;         // S1 stage 3 timing
 uint32_t get_temp_timer = 0UL;         // temperature acquisition
-uint32_t ts_avg_timer = 0UL;           // Ts average timing
 uint32_t stg_2_pid_timer = 0UL;        // stage 2 PID
 uint32_t turn_on_pid_timer = 0UL;      // stage 2 PID ON
 uint32_t turn_off_pid_timer = 0UL;     // stage 2 PID OFF
-uint32_t address_sending_timer = 0UL;  // Address Sending
 uint32_t A_B_timer = 0UL;              // Stage ON/OFF and A&B PUBLISH
 
 // ######################## Temperature ########################
@@ -74,6 +72,11 @@ SensorBuffer sensorTa(10);  // Crear otra instancia para el sensor Ta
 
 // SystemState currentState = IDLE;
 StageState currentState = {IDLE, 0};
+
+// ########################## TASKS ##########################
+Task low_priority_msgs(10000, TASK_FOREVER, &aknowledgementRoutine);
+Task high_priority_msgs(3000, TASK_FOREVER, &publishTemperatures);
+Scheduler runner;
 
 MqttClient mqtt;
 Controller controller;
@@ -93,9 +96,7 @@ void backgroundTasks(void* pvParameters) {
     if(controller.isWiFiConnected()) {
       controller.loopOTA();
     }
-
     // printStackUsage(); // Monitorea el uso de la pila
-
     vTaskDelay(100 / portTICK_PERIOD_MS);
   }
 }
@@ -125,17 +126,22 @@ void setup() {
   controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
   controller.setUpRTC();
 
-  StageState last_state = controller.getLastState();
-  logger.println("Last state: " + String(last_state.stage) + " " + String(last_state.step));
-  if (last_state.stage != IDLE) currentState = last_state;
+  runner.init();
+  runner.addTask(low_priority_msgs);
+  runner.addTask(high_priority_msgs);
+  low_priority_msgs.enable();
+  high_priority_msgs.enable();
   
   DateTime current_date = controller.getDateTime();
   logger.println("Current date: " + String(current_date.hour()) + ":" + String(current_date.minute()) + " " + String(current_date.day()) + "/" + String(current_date.month()));
 
-  mqtt.connect(IP_ADDRESS, PORT, MQTT_ID, USERNAME, MQTT_PASSWORD);
+  StageState last_state = controller.getLastState();
+  logger.println("Last state: " + String(last_state.stage) + " " + String(last_state.step));
+  if (last_state.stage != IDLE) currentState = last_state;
+
   mqtt.setCallback(callback);
   mqtt.onConnect(onMQTTConnect);
-
+  mqtt.connect(IP_ADDRESS, PORT, MQTT_ID, USERNAME, MQTT_PASSWORD);
 
   xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 12000, NULL, 1, &communicationTask, 0);
 
@@ -150,14 +156,14 @@ void setup() {
 }
 
 void loop() {
+  runner.execute();
   // if is for testing porpuse comment this "if" and replace DateTime "now" for: DateTime now(__DATE__, __TIME__); 
   DateTime current_date = controller.getDateTime();
-  // DateTime current_date(__DATE__, __TIME__); 
 
-  if (!controller.isRTCConnected()) {  
-    logger.println("RTC not connected"); 
-    while (true) delay(1000);
-  }
+  // if (!controller.isRTCConnected()) {  
+  //   logger.println("RTC not connected"); 
+  //   while (true) delay(1000);
+  // }
 
   if(controller.isWiFiConnected()) {
     mqtt.loop();
@@ -181,7 +187,7 @@ void loop() {
 
   handleStage();
 
-  if (hasIntervalPassed(get_temp_timer, TIME_ACQ_DELAY)) publishTemperatures(current_date);  
+  // if (hasIntervalPassed(get_temp_timer, TIME_ACQ_DELAY)) publishTemperatures();  
   
 }
 
@@ -800,20 +806,6 @@ void publishStateChange(const char* topic, int state, const String& message) {
   logger.println(message);
 }
 
-void aknowledgementRoutine(){
-  mqtt.publishData(STAGE, currentState.stage);
-
-  mqtt.publishData(m_F1, controller.readDigitalInput(FAN_IO));
-  mqtt.publishData(m_F1_CCW, controller.readDigitalInput(FAN_CCW_IO));
-
-  mqtt.publishData(m_S1, controller.readDigitalInput(VALVE_IO));
-
-  mqtt.publishData(SETPOINT, Setpoint);
-
-  publishTemperatures();
-  publishPID();
-}
-
 void getTempAvg() {
   sensorTs.addValue(TS_F); // Añadir el valor al buffer de Ts
   sensorTc.addValue(TC_F);
@@ -834,7 +826,7 @@ void publishPID(){
   }
 }
 
-void publishTemperatures(DateTime &current_date) {
+void publishTemperatures() {
 // void publishTemperatures() {
   temp_data.ta = TA_F;
   temp_data.ts = TS_F;
@@ -959,4 +951,18 @@ void asyncLoopSprinkler(uint32_t &timer, uint32_t offTime, uint32_t onTime) {
 
     publishStateChange(m_S1, false, "Stage 2 S1 Stop published ");
   }
+}
+
+void aknowledgementRoutine(){
+  mqtt.publishData(STAGE, currentState.stage);
+
+  mqtt.publishData(m_F1, controller.readDigitalInput(FAN_IO));
+  mqtt.publishData(m_F1_CCW, controller.readDigitalInput(FAN_CCW_IO));
+
+  mqtt.publishData(m_S1, controller.readDigitalInput(VALVE_IO));
+
+  mqtt.publishData(SETPOINT, Setpoint);
+
+  // publishTemperatures();
+  publishPID();
 }
