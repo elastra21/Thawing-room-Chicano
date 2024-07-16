@@ -161,7 +161,7 @@ void WIFI::setUpWebServer(bool brigeSerial){
   }, handle_update_progress_cb);
 
   server.on("/edit-config", HTTP_GET, [&](AsyncWebServerRequest *request) {
-    File file = SPIFFS.open("/config.txt", "r");
+    File file = SD.open("/config.txt", "r");
     if (!file) {
         request->send(500, "text/plain", "Failed to open config file");
         return;
@@ -191,7 +191,7 @@ void WIFI::setUpWebServer(bool brigeSerial){
   });
 
   server.on("/update-config", HTTP_POST, [&](AsyncWebServerRequest *request) {
-    File file = SPIFFS.open("/config.txt", "r");
+    File file = SD.open("/config.txt", "r");
   if (!file) {
       request->send(500, "text/plain", "Failed to open config file for writing");
       return;
@@ -215,7 +215,7 @@ void WIFI::setUpWebServer(bool brigeSerial){
     Serial.println();
 
     // Re-open the file for writing
-    file = SPIFFS.open("/config.txt", "w");
+    file = SD.open("/config.txt", "w");
     if (serializeJson(doc, file) == 0) {
         file.close();
         request->send(500, "text/plain", "Failed to write to file");
@@ -235,8 +235,8 @@ void WIFI::setUpWebServer(bool brigeSerial){
   });
 
   server.on("/download-config", HTTP_GET, [](AsyncWebServerRequest *request) {
-    if (SPIFFS.exists("/config.txt")) {
-        request->send(SPIFFS, "/config.txt", "application/json", true);
+    if (SD.exists("/config.txt")) {
+        request->send(SD, "/config.txt", "application/json", true);
     } else {
         request->send(404, "text/plain", "Configuration file not found");
     }
@@ -244,8 +244,8 @@ void WIFI::setUpWebServer(bool brigeSerial){
 
 
   server.on("/download-default-params", HTTP_GET, [](AsyncWebServerRequest *request) {
-    if (SPIFFS.exists("/defaultParameters.txt")) {
-        request->send(SPIFFS, "/defaultParameters.txt", "application/json", true);
+    if (SD.exists("/defaultParameters.txt")) {
+        request->send(SD, "/defaultParameters.txt", "application/json", true);
     } else {
         request->send(404, "text/plain", "Default Parameters file not found");
     }

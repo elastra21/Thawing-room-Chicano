@@ -10,12 +10,40 @@ void Logger::init(unsigned long baudRate) {
     } else {
         // find way to init the webserial from here
     }
+}
 
-    #ifdef SD_Logs
-        if (!SD.begin()) {
-            Serial.println("SD Card failed, or not present");
-        }
-    #endif
+void Logger::setFileName(DateTime now) {
+    filename = "/log_" + String(now.year()) + "_" + String(now.month()) + "_" + String(now.day()) + "_" + String(now.hour()) + "-" + String(now.minute()) + ".txt";
+}
+
+void Logger::writeSD(const String &message, DateTime now) {
+    if (!theresSD) {
+        Serial.println("No SD card found");
+        return;
+    }
+
+    File file = SD.open(filename, FILE_APPEND);
+    if (!file) {
+        Serial.println("Failed to open file for writing");
+        return;
+    }
+
+   // print message with timestamp
+    file.print(now.year(), DEC);
+    file.print('/');
+    file.print(now.month(), DEC);
+    file.print('/');
+    file.print(now.day(), DEC);
+    file.print(" ");
+    file.print(now.hour(), DEC);
+    file.print(':');
+    file.print(now.minute(), DEC);
+    file.print(':');
+    file.print(now.second(), DEC);
+    file.print(" - ");
+    file.println(message);
+
+    file.flush();
 }
 
 void Logger::setOutput(OutputType output) {
@@ -71,5 +99,38 @@ void Logger::setupSD() {
         digitalWrite(SS, HIGH); // Set CS HIGH to deselect the SD card (inverted logic)
         return;
     }
+    theresSD = true;
     digitalWrite(SS, HIGH); // Set CS HIGH to deselect the SD card (inverted logic)
 }
+
+void Logger::getSDInfo() {
+    if (!theresSD) {
+        Serial.println("No SD card found");
+        return;
+    }
+
+    uint8_t cardType = SD.cardType();
+    if (cardType == CARD_NONE) {
+        Serial.println("No CARD");  
+        return;
+    }
+
+    Serial.print("Card type:");
+
+    if (cardType == CARD_MMC) {
+        Serial.println("MMC");
+    } 
+    else if (cardType == CARD_SD) {
+        Serial.println("SDSC");
+    } 
+    else if (cardType == CARD_SDHC) {
+        Serial.println("SDHC");
+    } 
+    else {
+        Serial.println("UNKNOWN");  
+    }
+
+    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+    Serial.printf("Card capacity: %lluMB\n", cardSize);
+}
+

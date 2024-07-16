@@ -25,6 +25,7 @@ Controller::~Controller() {
 void Controller::init() {
   setUpI2C();
   setUpIOS();
+  logger.setupSD();
 }
 
 void Controller::setUpLogger() {
@@ -105,6 +106,7 @@ void Controller::setUpRTC() {
 
     // Adjust RTC
     rtc.adjust(ntpTime);
+
   }
 
   if(isTsContactLess()) setUpIRTc();
@@ -266,6 +268,23 @@ bool Controller::getConnectionStatus() {
   return wifi.getConnectionStatus();
 }
 
+String Controller::jsonBuilder(String keys[], float values[], int length) {
+  // Crear un buffer estático para almacenar el JSON
+  StaticJsonDocument<200> doc;
+
+  // Añadir los datos al documento JSON
+  for (int i = 0; i < length; i++) {
+    doc[keys[i]] = values[i];
+  }
+
+  // Crear una cadena para almacenar el resultado JSON
+  String output;
+  serializeJson(doc, output);
+
+  // Devolver la cadena JSON
+  return output;
+}
+
 void Controller::loopOTA() {
   wifi.loopOTA();
 }
@@ -276,7 +295,8 @@ void Controller::setUpWiFi(const char* ssid, const char* password, const char* h
 
 void Controller::updateDefaultParameters(stage_parameters &stage1_params, stage_parameters &stage2_params, stage_parameters &stage3_params, room_parameters &room, data_tset &N_tset ){
   // Abre el archivo de configuración existente
-  File configFile = SPIFFS.open("/defaultParameters.txt", FILE_READ);
+  // File configFile = SPIFFS.open("/defaultParameters.txt", FILE_READ);
+  File configFile = SD.open("/defaultParameters.txt", FILE_READ);
   if (!configFile) {
         DEBUG("Error al abrir el archivo de configuración para lectura");
     return;
@@ -315,7 +335,7 @@ void Controller::updateDefaultParameters(stage_parameters &stage1_params, stage_
   doc["tset"]["tcSet"] = N_tset.tc;
 
   // Open file for writing
-  configFile = SPIFFS.open("/defaultParameters.txt", FILE_WRITE);
+  configFile = SD.open("/defaultParameters.txt", FILE_WRITE);
   if (!configFile) {
     DEBUG("Error al abrir el archivo de configuración para escritura");
     return;
@@ -331,13 +351,13 @@ void Controller::updateDefaultParameters(stage_parameters &stage1_params, stage_
 
 void Controller::runConfigFile(char* ssid, char* password, char* hostname, char* ip_address, uint16_t* port, char* mqtt_id, char* username, char* mqtt_password, char* prefix_topic) {
   // Iniciar SPIFFS
-  if (!SPIFFS.begin(true)) {
-    DEBUG("An error has occurred while mounting SPIFFS");
-    return;
-  }
+  // if (!SPIFFS.begin(true)) {
+  //   DEBUG("An error has occurred while mounting SPIFFS");
+  //   return;
+  // }
 
   // Leer archivo de configuración
-  File file = SPIFFS.open("/config.txt");
+  File file = SD.open("/config.txt");
   if (!file) {
     DEBUG("Failed to open config file");
     return;
@@ -370,24 +390,25 @@ void Controller::runConfigFile(char* ssid, char* password, char* hostname, char*
     ir_ts = doc["IR_TS"]["eneable"];
     ARRAY_SIZE = doc["IR_TS"]["sample_size"];
   }
-
+  if(doc.containsKey("TIME_ZONE_OFFSET_HRS")) TIME_ZONE_OFFSET_HRS = doc["TIME_ZONE_OFFSET_HRS"];
+  DEBUG(("TIME_ZONE_OFFSET_HRS: " + String(TIME_ZONE_OFFSET_HRS)).c_str());
   if(doc.containsKey("LoRa_Tc")) setLoraTc(doc["LoRa_Tc"]);
   if(doc.containsKey("WEB_SERIAL")) logger.setOutput(doc["WEB_SERIAL"]);
   // logging all values
-  // DEBUG("SSID: " + String(ssid));
-  // DEBUG("WIFI_PASSWORD: " + String(password));
-  // DEBUG("HOST_NAME: " + String(hostname));
-  // DEBUG("IP_ADDRESS: " + String(ip_address));
-  // DEBUG("PORT: " + String(*port));
-  // DEBUG("USERNAME: " + String(username));
-  // DEBUG("TOPIC: " + String(prefix_topic));
-  // DEBUG("MQTT_ID: " + String(mqtt_id));
-  // DEBUG("MQTT_PASSWORD: " + String(mqtt_password
+  DEBUG(("SSID: " + String(ssid)).c_str());
+  DEBUG(("WIFI_PASSWORD: " + String(password)).c_str());
+  DEBUG(("HOST_NAME: " + String(hostname)).c_str());
+  DEBUG(("IP_ADDRESS: " + String(ip_address)).c_str());
+  DEBUG(("PORT: " + String(*port)).c_str());
+  DEBUG(("USERNAME: " + String(username)).c_str());
+  DEBUG(("TOPIC: " + String(prefix_topic)).c_str());
+  DEBUG(("MQTT_ID: " + String(mqtt_id)).c_str());
+  DEBUG(("MQTT_PASSWORD: " + String(mqtt_password)).c_str());
 
 }
 
 void Controller::setUpDefaultParameters(stage_parameters &stage1_params, stage_parameters &stage2_params, stage_parameters &stage3_params, room_parameters &room, data_tset &N_tset){
-  File file = SPIFFS.open("/defaultParameters.txt", "r");
+  File file = SD.open("/defaultParameters.txt", "r");
   if (!file) {
     DEBUG("Error al abrir el archivo de parámetros");
     return;
@@ -503,4 +524,8 @@ void Controller::saveLastState(StageState current_state) {
 
 bool Controller::thresLastState() {
     
+}
+
+void Controller::saveLogToSD(const String &message) {
+  logger.writeSD(message, rtc.now());
 }

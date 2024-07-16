@@ -27,8 +27,9 @@
 
 #define SECS_IN_HR 3600
 
-#define TIME_ZONE_OFFSET_HRS            (-7)  /* Ensenada, México */
+// #define TIME_ZONE_OFFSET_HRS            (-7)  /* Ensenada, México */
 // #define TIME_ZONE_OFFSET_HRS            (+8)   /* Taiping, Malaysia */
+
 typedef struct {
     float fanOnTime;
     float fanOffTime;
@@ -63,6 +64,7 @@ private:
     bool ir_ts = false;
     bool lora_tc = false;
     Preferences preferences;
+    int8_t TIME_ZONE_OFFSET_HRS = 0;
 
     void setUpI2C();
     void setUpIOS();
@@ -101,6 +103,7 @@ public:
     DateTime getDateTime();
     void setUpOneWireProbes(); // -----> NOT DEFINED YET
     void setLoraTc(bool value);
+    void saveLogToSD(const String &message);
     void updateProbesTemperatures(); // ----> NOT DEFINED YET
     void setTsContactLess(bool value);
     float readTempFrom(uint8_t channel);
@@ -109,6 +112,7 @@ public:
     float getOneWireTempFrom(DeviceAddress address); // ----> NOT DEFINED YET
     void writeAnalogOutput(uint8_t output, uint8_t value);
     void writeDigitalOutput(uint8_t output, uint8_t value);
+    String jsonBuilder(String keys[], float values[], int length);
     void turnOnFan(bool value, bool CCW = false);
     // WIFI CLASS
     void loopOTA();
@@ -126,11 +130,12 @@ public:
 
     //Logger
     void DEBUG(const char *message);
+    // void DEBUG(String message);
 
     template <typename T> 
     bool updateConfigJson(const char* param, T value, String file = "/config.txt"){
         // Abre el archivo de configuración existente
-        File configFile = SPIFFS.open(file, FILE_READ);
+        File configFile = SD.open(file, FILE_READ);
         if (!configFile) {
             DEBUG("Error al abrir el archivo de configuración para lectura");
             return false;
@@ -148,7 +153,7 @@ public:
         doc[param] = value;
 
         // Open file for writing
-        configFile = SPIFFS.open(file, FILE_WRITE);
+        configFile = SD.open(file, FILE_WRITE);
         if (!configFile) {
             DEBUG("Error al abrir el archivo de configuración para escritura");
             return false;

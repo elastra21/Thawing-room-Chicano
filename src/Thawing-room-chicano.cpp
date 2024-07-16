@@ -846,27 +846,25 @@ void publishTemperatures() {
   mqtt.publishData(AVG_TS_TOPIC, temp_data.avg_ts);
   mqtt.publishData(AVG_TC_TOPIC, temp_data.avg_tc);
 
-  // for debug purpose
-  // logger.println("Average: " + String(temp_data.avg_ts));
-  logger.println("Ts: " + String(TS));
-  logger.println("TC: " + String(TC));
-  logger.println("Ta: " + String(TA));
-  // // logger.println("Nstart: " + String(remote_start));
-  // // logger.println("Nstop: " + String(remote_stop));
-  // logger.println("A variable: " + String(room.A));
-  // logger.println("B variable: " + String(room.B));
-  // logger.println("P variable: " + String(Kp));
-  // logger.println("I variable: " + String(Ki));
-  // logger.println("D variable: " + String(Kd));
-  // logger.println("setpoint raw: " + String(Setpoint));
-  // logger.println("setpoint: " + String(pid_setpoint));
+  String keys[] = {"Ts", "Tc", "Ta"};
+  float values[] = {TS, TC, TA};
+  const size_t size = sizeof(keys) / sizeof(keys[0]);
 
-  // logger.printTime("Time:", current_date.hour(), current_date.minute(), current_date.day(), current_date.month());
-  // logger.printTime("Stage 2 Time:", stage2_hour, stage2_minute, stage2_day, stage2_month);
+  const String msg = controller.jsonBuilder(keys, values, size);
+
+  logger.println(msg);
+
+  // String keys[] = {"Ts", "Tc", "Ta"};
+  // float values[] = {TS, TC, TA};
+  // const size_t size = sizeof(keys) / sizeof(keys[0]);
 }
 
 void initStage1(){
   logger.println("Stage 1 Initiated");
+
+  #ifdef SD_Logs
+    logger.setFileName(controller.getDateTime());
+  #endif
 
   publishStateChange(m_F1, false, "Stage 1 init M_F1 stop published ");
   publishStateChange(m_F2, false, "Stage 1 init M_F2 stop published ");
@@ -965,4 +963,12 @@ void aknowledgementRoutine(){
 
   // publishTemperatures();
   publishPID();
+
+  String keys[] = {AVG_TA_TOPIC, AVG_TS_TOPIC, AVG_TC_TOPIC, PID_OUTPUT};
+  float values[] = {temp_data.avg_ta, temp_data.avg_ts, temp_data.avg_tc, pid_output};
+  const size_t size = sizeof(keys) / sizeof(keys[0]);
+
+  const String msg = controller.jsonBuilder(keys, values, size);
+
+  if (currentState.stage > IDLE) controller.saveLogToSD(msg);
 }

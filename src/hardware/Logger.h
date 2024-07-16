@@ -2,6 +2,7 @@
 #define LOGGER_H
 
 #include "SD.h"
+#include <RTClib.h> 
 #include <Arduino.h>
 
 #define SCK   36                //SCK on SPI3
@@ -15,29 +16,31 @@
   #include "WebSerialLite.h"
 // #endif
 
+#define SD_Logs true
+
 class Logger {
 public:
     enum OutputType { HW_SERIAL, WEBSERIAL };
 
 private:
+    String filename = "/log.txt";
+    bool theresSD = false;
 
-    void setupSD();
+protected:
 
 public:
     OutputType currentOutput;
     
     Logger();
-
+    void setupSD();
+    void getSDInfo();
+    void setFileName(DateTime now);
+    void writeSD(const String &message,  DateTime now);
     void init(unsigned long baudRate = 115200);
-
     void setOutput(OutputType output);
-
     void print(const String &message);
-
     void println(const String &message);
-
     void printValue(const String &key, const String &value);
-
     void printTime(const String &prefix, int hour, int minute, int day, int month);
 };
 
