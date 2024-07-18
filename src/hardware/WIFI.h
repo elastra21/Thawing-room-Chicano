@@ -3,6 +3,7 @@
 #include "EEPROM.h"
 #include <Update.h>
 #include <SPIFFS.h>
+#include "config.h"
 #include <ESPmDNS.h>
 #include <AsyncTCP.h>
 #include <WiFiMulti.h>
@@ -43,6 +44,7 @@ class WIFI {
     char hostname[HOSTNAME_SIZE];  
     bool last_connection_state = false;
     void DEBUG(const char *message);
+    bool validateJSON(const String& jsonString);
     String generateHTMLForJson(JsonVariant json, String path = "");
     void updateJsonFromForm(AsyncWebServerRequest *request, JsonVariant json);
 

@@ -60,4 +60,7 @@
 #define IR_SENSOR_ADDRESS 0x5A
 #define READ_TEMPERATURE 0x07
 
+#define CONFIG_FILE "/config.txt"
+
+
 #endif

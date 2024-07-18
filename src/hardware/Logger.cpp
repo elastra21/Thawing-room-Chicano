@@ -16,13 +16,21 @@ void Logger::setFileName(DateTime now) {
     filename = "/log_" + String(now.year()) + "_" + String(now.month()) + "_" + String(now.day()) + "_" + String(now.hour()) + "-" + String(now.minute()) + ".txt";
 }
 
+String Logger::getFileName() {
+    return filename;
+}
+
 void Logger::writeSD(const String &message, DateTime now) {
     if (!theresSD) {
         Serial.println("No SD card found");
         return;
     }
 
-    File file = SD.open(filename, FILE_APPEND);
+    if (!SD.exists(LOG_FOLDER_PATH)) SD.mkdir(LOG_FOLDER_PATH);
+    
+    const String path = LOG_FOLDER_PATH + filename;
+
+    File file = SD.open(path, FILE_APPEND);
     if (!file) {
         Serial.println("Failed to open file for writing");
         return;

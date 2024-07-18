@@ -357,7 +357,7 @@ void Controller::runConfigFile(char* ssid, char* password, char* hostname, char*
   // }
 
   // Leer archivo de configuración
-  File file = SD.open("/config.txt");
+  File file = SD.open(CONFIG_FILE);
   if (!file) {
     DEBUG("Failed to open config file");
     return;
@@ -527,5 +527,6 @@ bool Controller::thresLastState() {
 }
 
 void Controller::saveLogToSD(const String &message) {
+  if (logger.getFileName() == DEFAULT_LOG_FILE) logger.setFileName(rtc.now());
   logger.writeSD(message, rtc.now());
 }

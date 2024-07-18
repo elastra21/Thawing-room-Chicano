@@ -68,6 +68,37 @@ bool valToBool(String value){
   return value == "true";
 }
 
+void handleFileUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+  if (!index) {
+    Serial.printf("Subiendo archivo: %s\n", filename.c_str());
+
+    SD.remove(CONFIG_FILE);  // Cambiar el nombre del archivo según sea necesario
+    File file = SD.open(CONFIG_FILE, FILE_WRITE);
+    if (!file) {
+      Serial.println("Error al abrir el archivo para escribir");
+      return;
+    }
+    file.close();
+  }
+
+  File file = SD.open(CONFIG_FILE, FILE_APPEND);
+  if (file) {
+    file.write(data, len);
+    file.close();
+  }
+
+  if (final) {
+    Serial.printf("Archivo subido con éxito: %s\n", filename.c_str());
+  }
+}
+
+bool WIFI::validateJSON(const String& jsonString) {
+  const size_t capacity = JSON_OBJECT_SIZE(2) + 30;
+  DynamicJsonDocument doc(capacity);
+  DeserializationError error = deserializeJson(doc, jsonString);
+  return !error; // Retorna true si no hay error, false si hay error
+}
+
 
 void WIFI::updateJsonFromForm(AsyncWebServerRequest *request, JsonVariant json) {
   int params = request->params();
@@ -148,11 +179,20 @@ void WIFI::setUpWebServer(bool brigeSerial){
   server.on("/serverIndex", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/html", SERVER_INDEX_HTML);
   });
+
+  server.on("/replace-config", HTTP_POST, [](AsyncWebServerRequest *request){
+    request->send(200, "text/plain", "Configuration updated successfully");
+
+  }, handleFileUpload);
   
   /*handling uploading firmware file */
   server.on("/reset", HTTP_POST, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Resetting...");
     ESP.restart(); 
+  });
+
+  server.on("/upload-new-config", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(200, "text/html", "<form method='POST' action='/replace-config' enctype='multipart/form-data'><input type='file' name='upload'><input type='submit' value='Upload'></form>");
   });
 
   server.on("/update", HTTP_POST, []( AsyncWebServerRequest *request) {
@@ -161,7 +201,7 @@ void WIFI::setUpWebServer(bool brigeSerial){
   }, handle_update_progress_cb);
 
   server.on("/edit-config", HTTP_GET, [&](AsyncWebServerRequest *request) {
-    File file = SD.open("/config.txt", "r");
+    File file = SD.open(CONFIG_FILE, "r");
     if (!file) {
         request->send(500, "text/plain", "Failed to open config file");
         return;
@@ -191,14 +231,20 @@ void WIFI::setUpWebServer(bool brigeSerial){
   });
 
   server.on("/update-config", HTTP_POST, [&](AsyncWebServerRequest *request) {
-    File file = SD.open("/config.txt", "r");
+
+  String body = "";
+  if (request->hasParam("body", true)) {
+    body = request->getParam("body", true)->value();
+  }
+
+  File file = SD.open(CONFIG_FILE, "r");
   if (!file) {
       request->send(500, "text/plain", "Failed to open config file for writing");
       return;
   }
   DynamicJsonDocument doc(4096);  // Ajusta el tamaño según tu archivo JSON
 
-    DeserializationError error = deserializeJson(doc, file);
+  DeserializationError error = deserializeJson(doc, file);
     if (error) {
         file.close();
         request->send(500, "text/plain", "Failed to parse config file");
@@ -215,7 +261,7 @@ void WIFI::setUpWebServer(bool brigeSerial){
     Serial.println();
 
     // Re-open the file for writing
-    file = SD.open("/config.txt", "w");
+    file = SD.open(CONFIG_FILE, "w");
     if (serializeJson(doc, file) == 0) {
         file.close();
         request->send(500, "text/plain", "Failed to write to file");
@@ -235,8 +281,8 @@ void WIFI::setUpWebServer(bool brigeSerial){
   });
 
   server.on("/download-config", HTTP_GET, [](AsyncWebServerRequest *request) {
-    if (SD.exists("/config.txt")) {
-        request->send(SD, "/config.txt", "application/json", true);
+    if (SD.exists(CONFIG_FILE)) {
+        request->send(SD, CONFIG_FILE, "application/json", true);
     } else {
         request->send(404, "text/plain", "Configuration file not found");
     }
@@ -248,6 +294,41 @@ void WIFI::setUpWebServer(bool brigeSerial){
         request->send(SD, "/defaultParameters.txt", "application/json", true);
     } else {
         request->send(404, "text/plain", "Default Parameters file not found");
+    }
+  });
+
+    server.on("/logs", HTTP_GET, [](AsyncWebServerRequest *request){
+    String html = "<h1>Log Files</h1><ul>";
+    File root = SD.open(LOG_FOLDER_PATH);
+    if (!root) {
+      request->send(500, "text/plain", "Failed to open logs directory");
+      return;
+    }
+    File file = root.openNextFile();
+    while (file) {
+      String fileName = file.name();
+      html += "<li><a href='/download_log?file=" + fileName + "'>" + fileName + "</a></li>";
+      file = root.openNextFile();
+    }
+    html += "</ul>";
+    request->send(200, "text/html", html);
+  });
+
+  // Manejar la descarga de archivos
+  server.on("/download_log", HTTP_GET, [](AsyncWebServerRequest *request){
+    if (request->hasParam("file")) {
+      String fileName = request->getParam("file")->value();
+      String full_path = LOG_FOLDER_PATH + String("/") + fileName;
+      logger.println(("Downloading file: " + full_path).c_str());
+      File file = SD.open(full_path);
+      if (file) {
+        request->send(file, file.name(), "application/octet-stream");
+        file.close();
+      } else {
+        request->send(404, "text/plain", "File not found");
+      }
+    } else {
+      request->send(400, "text/plain", "File parameter missing");
     }
   });
   

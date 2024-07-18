@@ -16,6 +16,9 @@
   #include "WebSerialLite.h"
 // #endif
 
+#define DEFAULT_LOG_FILE "/log.txt"
+#define LOG_FOLDER_PATH "/logs"
+
 #define SD_Logs true
 
 class Logger {
@@ -23,7 +26,7 @@ public:
     enum OutputType { HW_SERIAL, WEBSERIAL };
 
 private:
-    String filename = "/log.txt";
+    String filename = DEFAULT_LOG_FILE;
     bool theresSD = false;
 
 protected:
@@ -34,6 +37,7 @@ public:
     Logger();
     void setupSD();
     void getSDInfo();
+    String getFileName();
     void setFileName(DateTime now);
     void writeSD(const String &message,  DateTime now);
     void init(unsigned long baudRate = 115200);

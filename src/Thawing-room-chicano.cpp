@@ -772,6 +772,9 @@ void sendTemperaturaAlert(float temp, String sensor){
 }
 
 void setStage(SystemState stage) {
+  if (currentState.stage > IDLE && stage == IDLE) logger.setFileName(DEFAULT_LOG_FILE);
+  else if (currentState.stage == IDLE && stage > IDLE) logger.setFileName(controller.getDateTime());
+  
   currentState.stage = stage;
   currentState.step = 0;
 
@@ -862,9 +865,9 @@ void publishTemperatures() {
 void initStage1(){
   logger.println("Stage 1 Initiated");
 
-  #ifdef SD_Logs
-    logger.setFileName(controller.getDateTime());
-  #endif
+  // #ifdef SD_Logs
+  //   logger.setFileName(controller.getDateTime());
+  // #endif
 
   publishStateChange(m_F1, false, "Stage 1 init M_F1 stop published ");
   publishStateChange(m_F2, false, "Stage 1 init M_F2 stop published ");
