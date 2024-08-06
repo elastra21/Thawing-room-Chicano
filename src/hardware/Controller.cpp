@@ -134,19 +134,29 @@ float Controller::getIRTemp() {
   if (!mlx.getFrame(pixelTemps)) {
     for (int i = 0; i < 32 * 24; i++) checkAndInsertBottomTemps(pixelTemps[i], bottomTemps);
 
-    // Imprimir los 5 valores más bajos
-    // DEBUG(("Top" + String(ARRAY_SIZE)+" temperaturas más bajas:").c_str());
-    
-    // String message = "";
-    // for (int i = 0; i < ARRAY_SIZE; i++) message += String(bottomTemps[i])+ " \t";
-    // DEBUG(message.c_str());
-
     // min, max and avg temps
-    // DEBUG(("Min: "+String(getMinTemp(bottomTemps))).c_str());
-    // DEBUG(("Max: "+String(getMaxTemp(bottomTemps))).c_str());
-    // DEBUG(("Avg: "+String(getAvgBottomTemp(bottomTemps))).c_str());
+    const float min = getMinTemp(bottomTemps);
+    const float max = getMaxTemp(bottomTemps);
+    const float avg = getAvgBottomTemp(bottomTemps);
+
+    StaticJsonDocument<200> doc;
+
+    doc["MIN"] = round(min * 100) / 100.0;
+    doc["MAX"] = round(max * 100) / 100.0;
+    doc["AVG"] = round(avg * 100) / 100.0;
+    for(int i = 0; i < ARRAY_SIZE; i++) doc["values"][i] = round(bottomTemps[i] * 100) / 100.0;
+
+    // Crear una cadena para almacenar el resultado JSON
+    String output;
+    serializeJson(doc, output);
+
+    DEBUG(("Min: "+String(min)).c_str());
+    DEBUG(("Max: "+String(max)).c_str());
+    DEBUG(("Avg: "+String(avg)).c_str());
+
+    // Serial.println(output.c_str());
   
-    return getAvgBottomTemp(bottomTemps);
+    return avg;
   } 
   
   DEBUG("Error al leer el frame del sensor MLX90640");
@@ -176,9 +186,14 @@ float Controller::getMaxTemp(float *temps) {
   return maxTemp;
 }
 
+float roundToDecimalPlaces(float number, int decimalPlaces) {
+    float multiplier = pow(10.0, decimalPlaces);
+    return round(number * multiplier) / multiplier;
+}
+
 void Controller::checkAndInsertBottomTemps(float temp, float *temps) {
   if (temp < temps[ARRAY_SIZE - 1]) {
-    temps[ARRAY_SIZE - 1] = temp; // Reemplaza el valor más alto con la nueva temperatura
+    temps[ARRAY_SIZE - 1] =temp; // Reemplaza el valor más alto con la nueva temperatura
     for (int i = ARRAY_SIZE - 1; i > 0; i--) {
       if (temps[i] < temps[i - 1]) {
         float tmp = temps[i];
@@ -188,6 +203,8 @@ void Controller::checkAndInsertBottomTemps(float temp, float *temps) {
     }
   }
 }
+
+
 
 
 bool Controller::isTsContactLess() {
