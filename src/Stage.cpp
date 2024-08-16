@@ -51,4 +51,10 @@ void Stage::DEBUG(const char *message) {
 }
 
 
+void Stage::ERROR(ErrorType error){
+  char buffer[100];
+  snprintf(buffer, sizeof(buffer), "[ERROR -> MqttClient]: %s", errorMessages[error]);
+  logger.println(buffer);
+}
+
 // Compare this snippet from src/Stage.cpp:

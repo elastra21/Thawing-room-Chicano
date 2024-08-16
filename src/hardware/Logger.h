@@ -19,6 +19,9 @@
 #define DEFAULT_LOG_FILE "/log.txt"
 #define LOG_FOLDER_PATH "/logs"
 
+//Defining messages of ERRORS
+#define ERR_NOT_SDCARD "No SD card found"
+
 #define SD_Logs true
 
 class Logger {
@@ -26,8 +29,10 @@ public:
     enum OutputType { HW_SERIAL, WEBSERIAL };
 
 private:
+    enum ErrorType { NOT_SDCARD, NUM_ERRORS };
     String filename = DEFAULT_LOG_FILE;
     bool theresSD = false;
+    const String errorMessages[NUM_ERRORS] = {ERR_NOT_SDCARD};
 
 protected:
 
@@ -42,6 +47,8 @@ public:
     void writeSD(const String &message,  DateTime now);
     void init(unsigned long baudRate = 115200);
     void setOutput(OutputType output);
+    void printError(uint8_t errorType);
+    void printError(const String &message);
     void print(const String &message);
     void println(const String &message);
     void printValue(const String &key, const String &value);

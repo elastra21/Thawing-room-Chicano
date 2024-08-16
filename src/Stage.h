@@ -6,11 +6,16 @@
 
 class Stage {
 private:
+    enum ErrorType { 
+        NUM_ERRORS 
+    };
+    const String errorMessages[NUM_ERRORS] = {};
     uint8_t no_steps = 0;
     uint8_t current_step = 0;
     std::function<void ()> callback_init = NULL;
     std::function<void ()> callback_destroy = NULL;
 
+    void ERROR(ErrorType error);
     void DEBUG(const char *message);
 public:
     Stage(uint8_t no_stages, std::function<void ()> callback_init = NULL, std::function<void ()> callback_destroy = NULL);

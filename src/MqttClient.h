@@ -79,6 +79,10 @@
 #define SPOILED_SENSOR      "mfp2/spoiled_sensor"
 #define IR_TS               "mfp2/IR_TS"
 
+// ERROR MESSAGES
+#define ON_CONNECTION_ERR_TXT "Error on connection"
+#define ON_RECONNECT_ERR_TXT "Error on reconnect"
+#define ON_SUBSCRIBE_ERR_TXT "Error on subscribe"
 
 
 
@@ -104,6 +108,15 @@ class MqttClient {
     // void exampleCall();
     void DEBUG(const char *message);
   private:
+    enum ErrorType { 
+      ERROR_ON_CONNECTION,
+      ERROR_ON_RECONNECT,
+      ERROR_ON_SUBSCRIBE,
+      NUM_ERRORS 
+    };
+
+    const String errorMessages[NUM_ERRORS] = {ON_CONNECTION_ERR_TXT, ON_RECONNECT_ERR_TXT, ON_SUBSCRIBE_ERR_TXT};
+
     uint16_t mqtt_port;
     char mqtt_id[MQTT_USERNAME_SIZE];
     char mqtt_username[MQTT_USERNAME_SIZE];  
@@ -112,6 +125,7 @@ class MqttClient {
     bool no_service_available = true;
     bool last_connection_state = false;
     std::function<void ()> callback_connect = NULL;
+    void ERROR (ErrorType error);
 
     // map list of suscribed topics
     const char* topics[SUB_ARRAY_SIZE] = {

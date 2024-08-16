@@ -376,7 +376,11 @@ void Controller::runConfigFile(char* ssid, char* password, char* hostname, char*
   // Leer archivo de configuración
   File file = SD.open(CONFIG_FILE);
   if (!file) {
-    DEBUG("Failed to open config file");
+    while (true){
+      DEBUG("Failed to open config file");
+      delay(1000);
+    }
+    // Pending What to do if the file is not found
     return;
   }
 
@@ -427,7 +431,11 @@ void Controller::runConfigFile(char* ssid, char* password, char* hostname, char*
 void Controller::setUpDefaultParameters(stage_parameters &stage1_params, stage_parameters &stage2_params, stage_parameters &stage3_params, room_parameters &room, data_tset &N_tset){
   File file = SD.open("/defaultParameters.txt", "r");
   if (!file) {
-    DEBUG("Error al abrir el archivo de parámetros");
+    while (true){
+      DEBUG("Failed to open default parameters file");
+      delay(1000);
+    }
+    
     return;
   }
 
@@ -509,6 +517,12 @@ void Controller::DEBUG(const char *message){
   char buffer[100];
   snprintf(buffer, sizeof(buffer), "[Controller]: %s", message);
   logger.println(buffer);
+}
+
+void Controller::ERROR(ErrorType error){
+  char buffer[100];
+  snprintf(buffer, sizeof(buffer), " -> Controller]: %s", ERROR_MESSAGES[error]);
+  logger.printError(buffer);
 }
 
 void Controller::turnOnFan(bool value, bool CCW) {

@@ -23,6 +23,19 @@ static void handle_update_progress_cb(AsyncWebServerRequest *request, String fil
   }
 }
 
+  String WIFI::setLayOutInfo(const char* site, String extra_prop, String value){ 
+    String html = site;
+
+    if (extra_prop != "" && value != "") html.replace(extra_prop, value);
+    
+
+    html.replace("{{LOCATION}}", String(hostname));
+    html.replace("{{VERSION}}", String(VERSION));
+
+    return html;
+  };
+
+
 /* Message callback of WebSerial */
 static void recvMsg(uint8_t *data, size_t len){
   WebSerial.println("Received Data...");
@@ -167,70 +180,128 @@ void WIFI::setUpWebServer(bool brigeSerial){
   }
   
   DEBUG("mDNS responder started Pinche Hugo");
-  /*return index page which is stored in serverIndex */
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/html", INDEX_HTML);
-  });
 
-  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request){
+  // Función para autenticación básica en todas las rutas
+  auto checkAuth = [&](AsyncWebServerRequest *request) {
+    if (!request->authenticate(www_username, www_password)) {
+      request->requestAuthentication();
+      return false;
+    }
+    return true;
+  };
+
+
+  // ======================== Static Files ========================
+
+  server.on("/style.css", HTTP_GET, [&checkAuth](AsyncWebServerRequest *request){
+    if(!checkAuth(request)) return;
     request->send(200, "text/css", STYLE_CSS);
   });
 
-  server.on("/serverIndex", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/html", SERVER_INDEX_HTML);
+  server.on("/config.txt", HTTP_GET, [&checkAuth](AsyncWebServerRequest *request){
+    if(!checkAuth(request)) return;
+    if (SD.exists(CONFIG_FILE)) {
+        request->send(SD, CONFIG_FILE, "application/json", true);
+    } else {
+        request->send(404, "text/plain", "Configuration file not found");
+    }
   });
 
-  server.on("/replace-config", HTTP_POST, [](AsyncWebServerRequest *request){
+  server.on("/defaultParameters.txt", HTTP_GET, [&checkAuth](AsyncWebServerRequest *request){
+    if(!checkAuth(request)) return;
+    if (SD.exists("/defaultParameters.txt")) {
+        request->send(SD, "/defaultParameters.txt", "application/json", true);
+    } else {
+        request->send(404, "text/plain", "Default Parameters file not found");
+    }
+  });
+
+// ======================== Routes ========================
+
+    /*return index page which is stored in serverIndex */
+  server.on("/", HTTP_GET, [&](AsyncWebServerRequest *request) {
+    if(!checkAuth(request)) return;
+    const String doc = setLayOutInfo(SERVER_INDEX_HTML);
+    request->send(200, "text/html", doc);
+  });
+
+  server.on("/edit-config", HTTP_GET, [&](AsyncWebServerRequest *request) {
+    if(!checkAuth(request)) return;
+    return request->send(200, "text/html", setLayOutInfo(EDIT_CONFIG_HTML));
+  });
+
+  server.on("/edit-settings", HTTP_GET, [&](AsyncWebServerRequest *request) {
+    if(!checkAuth(request)) return;
+    request->send(200, "text/html", setLayOutInfo(EDIT_SETTINGS_HTML));
+  });
+
+  server.on("/logs", HTTP_GET, [&](AsyncWebServerRequest *request){
+    if(!checkAuth(request)) return;
+    String log_list = "";
+    File root = SD.open(LOG_FOLDER_PATH);
+    if (!root) {
+      request->send(500, "text/plain", "Failed to open logs directory");
+      return;
+    }
+    File file = root.openNextFile();
+    while (file) {
+      String fileName = file.name();
+      log_list += "\""+fileName + "\", ";
+      file = root.openNextFile();
+    }
+    log_list = log_list.substring(0, log_list.length() - 2);  // Remove trailing comma and space
+    
+
+    request->send(200, "text/html", setLayOutInfo(LOGS_HTML, "//{{LOGS}}", log_list));
+  });
+
+  server.onNotFound([](AsyncWebServerRequest *request) {
+      // request->send(SPIFFS, request->url(), String(), false); <------ Buen pishi hack!
+      request->send(404, "text/html", "Not found: <u>'"+ request->url() + "'</u>");
+  });
+
+  // ======================== SERVER PROCESES ========================
+
+  server.on("/replace-config", HTTP_POST, [&checkAuth](AsyncWebServerRequest *request){
+    if(!checkAuth(request)) return;
     request->send(200, "text/plain", "Configuration updated successfully");
 
   }, handleFileUpload);
   
   /*handling uploading firmware file */
-  server.on("/reset", HTTP_POST, [](AsyncWebServerRequest *request) {
+  server.on("/reset", HTTP_POST, [&checkAuth](AsyncWebServerRequest *request) {
+    if(!checkAuth(request)) return;
     request->send(200, "text/plain", "Resetting...");
     ESP.restart(); 
   });
 
-  server.on("/upload-new-config", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(200, "text/html", "<form method='POST' action='/replace-config' enctype='multipart/form-data'><input type='file' name='upload'><input type='submit' value='Upload'></form>");
-  });
-
-  server.on("/update", HTTP_POST, []( AsyncWebServerRequest *request) {
+  server.on("/update", HTTP_POST, [&checkAuth]( AsyncWebServerRequest *request) {
+    if(!checkAuth(request)) return;
     request->send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
     ESP.restart(); 
   }, handle_update_progress_cb);
 
-  server.on("/edit-config", HTTP_GET, [&](AsyncWebServerRequest *request) {
-    File file = SD.open(CONFIG_FILE, "r");
-    if (!file) {
-        request->send(500, "text/plain", "Failed to open config file");
-        return;
+    // Manejar la descarga de archivos
+  server.on("/download_log", HTTP_GET, [&checkAuth](AsyncWebServerRequest *request){
+    if(!checkAuth(request)) return;
+    if (request->hasParam("file")) {
+      String fileName = request->getParam("file")->value();
+      String full_path = LOG_FOLDER_PATH + String("/") + fileName;
+      logger.println(("Downloading file: " + full_path).c_str());
+      File file = SD.open(full_path);
+      if (file) {
+        request->send(file, file.name(), "application/octet-stream");
+        file.close();
+      } else {
+        request->send(404, "text/plain", "File not found");
+      }
+    } else {
+      request->send(400, "text/plain", "File parameter missing");
     }
-
-    DynamicJsonDocument doc(4096);  // Ajusta el tamaño según tu archivo JSON
-    DeserializationError error = deserializeJson(doc, file);
-    file.close();
-
-    if (error) {
-        request->send(500, "text/plain", "Failed to parse config file");
-        return;
-    }
-
-    String html = "<!DOCTYPE html><html><body>"
-                  "<h1>Editar Configuración</h1>"
-                  "<form action='/update-config' method='POST'>";
-    
-    html += generateHTMLForJson(doc);
-    
-    html += "<input type='submit' value='Actualizar'></form>"
-                "<br><a href='/download-config'><button type='button'>Descargar JSON</button></a>"
-                "<br><a href='/toggle-output'><button type='button'>Toggle Output</button></a>"
-                "</body></html>";
-
-    request->send(200, "text/html", html);
   });
 
   server.on("/update-config", HTTP_POST, [&](AsyncWebServerRequest *request) {
+  if(!checkAuth(request)) return;
 
   String body = "";
   if (request->hasParam("body", true)) {
@@ -272,6 +343,7 @@ void WIFI::setUpWebServer(bool brigeSerial){
   });
 
   server.on("/toggle-output", HTTP_GET, [&](AsyncWebServerRequest *request) {
+    if(!checkAuth(request)) return;
     if (logger.currentOutput == Logger::HW_SERIAL) {
       logger.setOutput(Logger::WEBSERIAL);
     } else {
@@ -280,57 +352,6 @@ void WIFI::setUpWebServer(bool brigeSerial){
     request->send(200, "text/plain", "Output toggled");
   });
 
-  server.on("/download-config", HTTP_GET, [](AsyncWebServerRequest *request) {
-    if (SD.exists(CONFIG_FILE)) {
-        request->send(SD, CONFIG_FILE, "application/json", true);
-    } else {
-        request->send(404, "text/plain", "Configuration file not found");
-    }
-  });
-
-
-  server.on("/download-default-params", HTTP_GET, [](AsyncWebServerRequest *request) {
-    if (SD.exists("/defaultParameters.txt")) {
-        request->send(SD, "/defaultParameters.txt", "application/json", true);
-    } else {
-        request->send(404, "text/plain", "Default Parameters file not found");
-    }
-  });
-
-    server.on("/logs", HTTP_GET, [](AsyncWebServerRequest *request){
-    String html = "<h1>Log Files</h1><ul>";
-    File root = SD.open(LOG_FOLDER_PATH);
-    if (!root) {
-      request->send(500, "text/plain", "Failed to open logs directory");
-      return;
-    }
-    File file = root.openNextFile();
-    while (file) {
-      String fileName = file.name();
-      html += "<li><a href='/download_log?file=" + fileName + "'>" + fileName + "</a></li>";
-      file = root.openNextFile();
-    }
-    html += "</ul>";
-    request->send(200, "text/html", html);
-  });
-
-  // Manejar la descarga de archivos
-  server.on("/download_log", HTTP_GET, [](AsyncWebServerRequest *request){
-    if (request->hasParam("file")) {
-      String fileName = request->getParam("file")->value();
-      String full_path = LOG_FOLDER_PATH + String("/") + fileName;
-      logger.println(("Downloading file: " + full_path).c_str());
-      File file = SD.open(full_path);
-      if (file) {
-        request->send(file, file.name(), "application/octet-stream");
-        file.close();
-      } else {
-        request->send(404, "text/plain", "File not found");
-      }
-    } else {
-      request->send(400, "text/plain", "File parameter missing");
-    }
-  });
   
   if (brigeSerial) {
     WebSerial.begin(&server);
@@ -436,6 +457,12 @@ void WIFI::DEBUG(const char *message){
   char buffer[100];
   snprintf(buffer, sizeof(buffer), "[WIFI]: %s", message);
   logger.println(buffer);
+}\
+
+void WIFI::ERROR(ErrorType error){
+  char buffer[100];
+  snprintf(buffer, sizeof(buffer), " -> WIFI]: %s", errorMessages[error].c_str());
+  logger.printError(buffer);
 }
 
 

@@ -147,3 +147,9 @@ void MqttClient::DEBUG(const char *message){
   snprintf(buffer, sizeof(buffer), "[MqttClient]: %s", message);
   logger.println(buffer);
 }
+
+void MqttClient::ERROR(ErrorType error){
+  char buffer[100];
+  snprintf(buffer, sizeof(buffer), "[ERROR -> MqttClient]: %s", errorMessages[error]);
+  logger.println(buffer);
+}

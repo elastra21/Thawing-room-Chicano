@@ -74,6 +74,21 @@ void Logger::println(const String &message) {
     }
 }
 
+void Logger::printError(uint8_t errorType) {
+    const String message = errorMessages[errorType];
+    if (currentOutput == WEBSERIAL) {
+        WebSerial.println("[ERROR -> LOGGER]: " + message);
+    } 
+    Serial.println("[ERROR -> LOGGER]: " + message);
+}
+
+void Logger::printError(const String &message) {
+    if (currentOutput == WEBSERIAL) {
+        WebSerial.println("[ERROR " + message);
+    } 
+    Serial.println("[ERROR " + message);
+}
+
 void Logger::printValue(const String &key, const String &value) {
     if (currentOutput == HW_SERIAL) {
         Serial.println(key + ": " + value);
@@ -102,11 +117,13 @@ void Logger::setupSD() {
 
     // Manually control CS for the SD card initialization
     digitalWrite(SS, LOW); // Set CS LOW to select the SD card (inverted logic)
-    if (!SD.begin(SS)) {
-        Serial.println("Failed to mount card!");
+    while (!SD.begin(SS)) {
+        printError(NOT_SDCARD);
         digitalWrite(SS, HIGH); // Set CS HIGH to deselect the SD card (inverted logic)
-        return;
+        // return;
+        delay(2000);
     }
+    
     theresSD = true;
     digitalWrite(SS, HIGH); // Set CS HIGH to deselect the SD card (inverted logic)
 }
