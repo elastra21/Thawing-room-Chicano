@@ -61,6 +61,7 @@
 #define READ_TEMPERATURE 0x07
 
 #define CONFIG_FILE "/config.txt"
+#define DEFAULT_PARAMS_FILE "/defaultParameters.txt"
 
 
 #endif
