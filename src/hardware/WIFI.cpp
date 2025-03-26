@@ -116,7 +116,7 @@ bool WIFI::validateJSON(const String& jsonString) {
 void WIFI::updateJsonFromForm(AsyncWebServerRequest *request, JsonVariant json) {
   int params = request->params();
   for (int i = 0; i < params; i++) {
-    AsyncWebParameter* p = request->getParam(i);
+    const AsyncWebParameter* p = request->getParam(i);
     String keyPath = p->name();
     std::vector<String> tokens;
     int last = 0, next = 0;
@@ -290,7 +290,7 @@ void WIFI::setUpWebServer(bool brigeSerial){
       logger.println(("Downloading file: " + full_path).c_str());
       File file = SD.open(full_path);
       if (file) {
-        request->send(file, file.name(), "application/octet-stream");
+        request->send(file, file.name(), "application/octet-stream", false);
         file.close();
       } else {
         request->send(404, "text/plain", "File not found");
@@ -363,7 +363,7 @@ void WIFI::setUpWebServer(bool brigeSerial){
   bool ssidExists = bodyDoc.containsKey("SSID");
 
   // Seleccionar el archivo a actualizar dependiendo de si existe el "SSID"
-  const char* fileToUpdate = ssidExists ? CONFIG_FILE : DEFAULT_PARAMETERS;
+  const char* fileToUpdate = ssidExists ? CONFIG_FILE : DEFAULT_PARAMS_FILE;
 
   File file = SD.open(fileToUpdate, "r");
   if (!file) {
