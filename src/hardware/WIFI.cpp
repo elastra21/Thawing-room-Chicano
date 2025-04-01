@@ -344,62 +344,56 @@ void WIFI::setUpWebServer(bool brigeSerial){
   // });
 
   server.on("/update-config", HTTP_POST, [&](AsyncWebServerRequest *request) {
-  if(!checkAuth(request)) return;
-
-  String body = "";
-  if (request->hasParam("body", true)) {
-    body = request->getParam("body", true)->value();
-  }
-
-  // Deserializar el body recibido para buscar el "SSID"
-  DynamicJsonDocument bodyDoc(1024);  // Ajusta el tamaño según lo necesites
-  DeserializationError error = deserializeJson(bodyDoc, body);
-
-  if (error) {
-    request->send(400, "text/plain", "Invalid JSON body");
-    return;
-  }
-
-  bool ssidExists = bodyDoc.containsKey("SSID");
-
-  // Seleccionar el archivo a actualizar dependiendo de si existe el "SSID"
-  const char* fileToUpdate = ssidExists ? CONFIG_FILE : DEFAULT_PARAMS_FILE;
-
-  File file = SD.open(fileToUpdate, "r");
-  if (!file) {
-    request->send(500, "text/plain", "Failed to open config file for writing");
-    return;
-  }
-
-  DynamicJsonDocument doc(4096);  // Ajusta el tamaño según tu archivo JSON
-  error = deserializeJson(doc, file);
-  if (error) {
-    file.close();
-    request->send(500, "text/plain", "Failed to parse config file");
-    return;
-  }
+    if(!checkAuth(request)) return;
   
-  file.close();  // Cerrar el archivo para reiniciar el puntero
-
-  // Actualizar el JSON con los nuevos valores del cuerpo
-  updateJsonFromForm(request, doc);
-
-  // Imprimir el documento actualizado en el Serial
-  Serial.println("Printing updated doc:");
-  serializeJson(doc, Serial);
-  Serial.println();
-
-  // Re-abrir el archivo para escribir los nuevos valores
-  file = SD.open(fileToUpdate, "w");
+    bool ssidExists = false;
   
-  if (serializeJson(doc, file) == 0) {
-    file.close();
-    request->send(500, "text/plain", "Failed to write to file");
-  } else {
-    file.close();
-    request->send(200, "text/plain", "Configuration updated successfully");
-  }
-});
+    int params = request->params();
+    for (int i = 0; i < params; i++) {
+      AsyncWebParameter* p = request->getParam(i);
+      String keyPath = p->name();
+      // logger.println(keyPath + ": " + p->value());
+      ssidExists = ssidExists || keyPath == "SSID";
+    }
+  
+    // Seleccionar el archivo a actualizar dependiendo de si existe el "SSID"
+    const char* fileToUpdate = ssidExists ? CONFIG_FILE : DEFAULT_PARAMS_FILE;
+  
+    File file = SD.open(fileToUpdate, "r");
+    if (!file) {
+      request->send(500, "text/plain", "Failed to open config file for writing");
+      return;
+    }
+  
+    DynamicJsonDocument doc(4096);  // Ajusta el tamaño según tu archivo JSON
+    DeserializationError error = deserializeJson(doc, file);
+    if (error) {
+      file.close();
+      request->send(500, "text/plain", "Failed to parse config file");
+      return;
+    }
+    
+    file.close();  // Cerrar el archivo para reiniciar el puntero
+  
+    // Actualizar el JSON con los nuevos valores del cuerpo
+    updateJsonFromForm(request, doc);
+  
+    // Imprimir el documento actualizado en el Serial
+    Serial.println("Printing updated doc:");
+    serializeJson(doc, Serial);
+    Serial.println();
+  
+    // Re-abrir el archivo para escribir los nuevos valores
+    file = SD.open(fileToUpdate, "w");
+    
+    if (serializeJson(doc, file) == 0) {
+      file.close();
+      request->send(500, "text/plain", "Failed to write to file");
+    } else {
+      file.close();
+      request->send(200, "text/plain", "Configuration updated successfully");
+    }
+  });
 
 
   server.on("/toggle-output", HTTP_GET, [&](AsyncWebServerRequest *request) {
