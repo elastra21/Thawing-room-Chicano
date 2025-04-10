@@ -1,0 +1,38 @@
+name: Build PlatformIO Firmware
+
+# Este workflow se disparará en cada push en la rama "main". Puedes cambiar la rama si lo deseas.
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v3
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Instalar PlatformIO
+        run: |
+          pip install platformio
+          platformio --version
+
+      - name: Construir el proyecto con PlatformIO
+        run: platformio run
+
+      - name: Subir firmware.bin como artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: firmware
+          # Ajusta la ruta según tu entorno de PlatformIO, 
+          # se asume que se genera en .pio/build/<env>/firmware.bin.
+          # El wildcard (*) permite seleccionar la carpeta correcta.
+          path: .pio/build/*/firmware.bin
+
