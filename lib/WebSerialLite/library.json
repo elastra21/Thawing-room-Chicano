@@ -15,8 +15,7 @@
   ],
   "dependencies": [
     {
-      "name": "external-repo",
-      "version": "https://github.com/me-no-dev/ESPAsyncWebServer.git"
+      "name": "external-repo"
     }
   ],
   "version": "2.2.0",

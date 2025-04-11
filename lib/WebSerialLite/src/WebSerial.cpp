@@ -3,7 +3,8 @@
 
 void WebSerialClass::begin(AsyncWebServer *server, const char *url) {
   _server = server;
-  _server->on(url, HTTP_GET, [](AsyncWebServerRequest *request) {
+
+  _handler = server->on(url, HTTP_GET, [](AsyncWebServerRequest *request) {
     // Send Webpage
     AsyncWebServerResponse *response = request->beginResponse_P(
         200, "text/html", WEBSERIAL_HTML, WEBSERIAL_HTML_SIZE);
@@ -11,9 +12,9 @@ void WebSerialClass::begin(AsyncWebServer *server, const char *url) {
     request->send(response);
   });
 
-
   String backendUrl = url;
   backendUrl.concat("ws");
+  if (_ws == NULL){
   _ws = new AsyncWebSocket(backendUrl);
   _ws->onEvent([&](AsyncWebSocket *server, AsyncWebSocketClient *client,
                    AwsEventType type, void *arg, uint8_t *data,
@@ -43,10 +44,30 @@ void WebSerialClass::begin(AsyncWebServer *server, const char *url) {
     }
   });
   _server->addHandler(_ws);
+  Serial.println("WebSerialClass::begin() ");
+  }
 
 #if defined(WEBSERIAL_DEBUG)
   DEBUG_WEB_SERIAL("Attached AsyncWebServer along with Websockets");
 #endif
+}
+
+void WebSerialClass::end() {
+  Serial.println("WebSerialClass::end()");
+  if (_server != NULL) {
+    Serial.println("WebSerialClass::end() - _server != NULL");
+    if (_ws != NULL) {
+      Serial.println("WebSerialClass::end() - _ws != NULL");
+      // _ws->closeAll();
+      _server->removeHandler(_ws);
+
+      // delay(100);
+      // delete _ws;
+      _ws = NULL;
+    }
+    _server->removeHandler(&_handler);
+    _server = NULL;
+  }
 }
 
 void WebSerialClass::onConnect(ConnHandler callbackFunc) {

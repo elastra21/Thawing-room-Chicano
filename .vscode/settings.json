@@ -2,6 +2,13 @@
     "idf.port": "/dev/cu.SLAB_USBtoUART",
     "files.associations": {
         "*.tcc": "cpp",
-        "fstream": "cpp"
-    }
+        "fstream": "cpp",
+        "unordered_map": "cpp",
+        "istream": "cpp",
+        "ostream": "cpp",
+        "sstream": "cpp",
+        "new": "cpp",
+        "cmath": "cpp"
+    },
+    "idf.pythonInstallPath": "/opt/homebrew/opt/python@3.11/Frameworks/Python.framework/Versions/3.11/bin/python3"
 }
