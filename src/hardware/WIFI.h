@@ -11,7 +11,7 @@
 #include <WiFiClient.h>
 #include <ArduinoOTA.h>
 #include <ArduinoJson.h>
-#include "hardware/logger.h"
+#include "./hardware/logger.h"
 #include "resources/WebFiles.h"
 
 #define SSID_SIZE 32
