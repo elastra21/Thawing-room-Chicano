@@ -22,7 +22,7 @@
 #define VALVE_IO        PORT_C3 // changed to have more logic on the board
 #define AIR_DAMPER_IO   PORT_C2
 #define FAN_CCW_IO      PORT_C1 
-#define FAN_IO          PORT_C0  
+#define FAN_CW_IO       PORT_C0  
 // #define STOP_IO     DI_0    
 // #define DLY_S_IO    DI_1    
 // #define START_IO    DI_2    

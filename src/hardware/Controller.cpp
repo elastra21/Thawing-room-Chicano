@@ -527,11 +527,10 @@ void Controller::ERROR(ErrorType error){
 
 void Controller::turnOnFan(bool value, bool CCW) {
   if (value) {
-    digitalWrite(FAN_IO, HIGH);
-    if(CCW) digitalWrite(FAN_CCW_IO, HIGH);
-    else digitalWrite(FAN_CCW_IO, LOW);
+    digitalWrite(FAN_CW_IO, CCW ? LOW : HIGH);
+    digitalWrite(FAN_CCW_IO, CCW ? HIGH : LOW);
   } else {
-    digitalWrite(FAN_IO, LOW);
+    digitalWrite(FAN_CW_IO, LOW);
     digitalWrite(FAN_CCW_IO, LOW);
   }
 }
