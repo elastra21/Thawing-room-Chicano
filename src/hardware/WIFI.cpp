@@ -161,7 +161,7 @@ void WIFI::updateJsonFromForm(AsyncWebServerRequest *request, JsonVariant json) 
 }
 
 
-void WIFI::init(const char* ssid, const char* password, const char* hostname){
+void WIFI::init(const char* ssid, const char* password, const char* hostname, const char* static_ip) {
   strncpy(this->ssid, ssid, sizeof(this->ssid) - 1);
   this->ssid[sizeof(this->ssid) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
 
@@ -170,6 +170,9 @@ void WIFI::init(const char* ssid, const char* password, const char* hostname){
 
   strncpy(this->hostname, hostname, sizeof(this->hostname) - 1);
   this->hostname[sizeof(this->hostname) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
+
+  strncpy(this->static_ip, static_ip, sizeof(this->static_ip) - 1);
+  this->static_ip[sizeof(this->static_ip) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
 }
 
 void WIFI::setUpWebServer(bool brigeSerial){
@@ -421,6 +424,10 @@ String WIFI::getIP(){
 }
 
 void WIFI::connectToWiFi(){
+  // Set static IP if provided
+  IPAddress local_ip;
+  WiFi.config(local_ip, IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0), IPAddress(192, 168, 1, 1));
+
   WiFi.begin(ssid, password);
   uint32_t notConnectedCounter = 0;
   EEPROM.begin(32);

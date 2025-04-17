@@ -34,7 +34,7 @@
 
 class WIFI {
   public:
-    void init(const char* ssid, const char* password, const char* hostname);
+    void init(const char* ssid, const char* password, const char* hostname, const char* static_ip = NULL);
     void loopOTA();
     String getIP();
     void setUpOTA();
@@ -57,6 +57,7 @@ class WIFI {
     char ssid[SSID_SIZE];  
     char password[PASSWORD_SIZE];
     char hostname[HOSTNAME_SIZE];  
+    char static_ip[IP_ADDRESS_SIZE];
     bool last_connection_state = false;
     void DEBUG(const char *message);
     void ERROR(ErrorType error);
