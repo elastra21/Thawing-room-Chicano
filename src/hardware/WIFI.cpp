@@ -171,8 +171,8 @@ void WIFI::init(const char* ssid, const char* password, const char* hostname, co
   strncpy(this->hostname, hostname, sizeof(this->hostname) - 1);
   this->hostname[sizeof(this->hostname) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
 
-  strncpy(this->static_ip, static_ip, sizeof(this->static_ip) - 1);
-  this->static_ip[sizeof(this->static_ip) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
+  // strncpy(this->static_ip, static_ip, sizeof(this->static_ip) - 1);
+  // this->static_ip[sizeof(this->static_ip) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
 }
 
 void WIFI::setUpWebServer(bool brigeSerial){
