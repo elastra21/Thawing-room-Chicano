@@ -232,7 +232,7 @@ void handleStage1(){
   
   // Step #1
   else if (stage_1.getCurrentStep() == 1){
-    if (!controller.readDigitalInput(FAN_CW_IO)){
+    if (!controller.getFanState()){
       hasIntervalPassed(fan_1_timer, stage1_params.fanOnTime, true); 
 
       controller.turnOnFan(true);                                                                                     // Turn ON F1
@@ -251,7 +251,7 @@ void handleStage1(){
   // Step #2
   else if (stage_1.getCurrentStep() == 2 ){
     // Turn OFF F1 when the time set in the configuration is over
-    if (controller.readDigitalInput(FAN_CW_IO)) {
+    if (controller.getFanState()) {
       hasIntervalPassed(fan_1_timer, stage1_params.fanOffTime , true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
@@ -267,7 +267,7 @@ void handleStage1(){
 
   // Step #3
   else if (stage_1.getCurrentStep() == 3){
-    if (!controller.readDigitalInput(FAN_CW_IO)){
+    if (!controller.getFanState()){
       hasIntervalPassed(fan_1_timer, stage1_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(true, true); 
@@ -284,7 +284,7 @@ void handleStage1(){
 
   // Step #4
   else if (stage_1.getCurrentStep() == 4){
-    if (controller.readDigitalInput(FAN_CW_IO)) {
+    if (controller.getFanState()) {
       hasIntervalPassed(fan_1_timer, stage1_params.fanOffTime , true); // In case that the time is over or that the stage and step are not updated
       
       controller.turnOnFan(false);
@@ -322,7 +322,7 @@ void handleStage2(){
 
   // Step #1
   else if (stage_2.getCurrentStep() == 1){
-    if (!controller.readDigitalInput(FAN_CW_IO)) {
+    if (!controller.getFanState()) {
       hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true);
       controller.turnOnFan(true);// Output of F1
       controller.writeDigitalOutput(AIR_DAMPER_IO, HIGH);  // Air damper
@@ -344,7 +344,7 @@ void handleStage2(){
     }
 
     // Activate the PID when F1 ON
-    if (controller.readDigitalInput(FAN_CW_IO) && hasIntervalPassed(turn_on_pid_timer, 3000)) {
+    if (controller.getFanState() && hasIntervalPassed(turn_on_pid_timer, 3000)) {
       pid_input = TA_F;
       // coef_output = Output;  // Transform the Output of the PID to the desired max value
       coef_output = (coef_pid * Output) / 100;  // Transform the Output of the PID to the desired max value
@@ -357,12 +357,12 @@ void handleStage2(){
     }
 
     // Turn OFF F1 when time is over
-    if (controller.readDigitalInput(FAN_CW_IO) && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true)) stage_2.nextStep();
+    if (controller.getFanState() && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true)) stage_2.nextStep();
   }
 
   // Step #2
   else if (stage_2.getCurrentStep() == 2 ){
-    if (controller.readDigitalInput(FAN_CW_IO)) {
+    if (controller.getFanState()) {
       hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
@@ -373,7 +373,7 @@ void handleStage2(){
     }
 
     // Put the PID at 0 when F1 OFF
-    if (!controller.readDigitalInput(FAN_CW_IO) && hasIntervalPassed(turn_off_pid_timer, 3000)) {
+    if (!controller.getFanState() && hasIntervalPassed(turn_off_pid_timer, 3000)) {
       //Setpoint = 0;
       pid_input = 0;
       Output = 0;
@@ -383,12 +383,12 @@ void handleStage2(){
       publishPID();
     }
 
-    if (!controller.readDigitalInput(FAN_CW_IO) && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true)) stage_2.nextStep();
+    if (!controller.getFanState() && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true)) stage_2.nextStep();
   }
 
   //Step #3
   else if (stage_2.getCurrentStep() == 3){
-     if (!controller.readDigitalInput(FAN_CW_IO)){
+     if (!controller.getFanState()){
       hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(true, true);
@@ -397,12 +397,12 @@ void handleStage2(){
       publishStateChange(m_F1, true, "Stage 2 F1 Start published ");
     }
 
-    if (controller.readDigitalInput(FAN_CW_IO) && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true)) stage_2.nextStep();
+    if (controller.getFanState() && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true)) stage_2.nextStep();
   }
 
   //Step #4
   else if (stage_2.getCurrentStep() == 4){
-    if (controller.readDigitalInput(FAN_CW_IO)) {
+    if (controller.getFanState()) {
       hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
@@ -412,7 +412,7 @@ void handleStage2(){
       publishStateChange(m_F1, false, "Stage 2 F1 Stop published ");
     }
 
-    if (!controller.readDigitalInput(FAN_CW_IO) && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true)) stage_2.setStep(1);
+    if (!controller.getFanState() && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true)) stage_2.setStep(1);
   }
 
   bool isReadyForStage3 = TS_F >= temp_set.ts && TC_F >= temp_set.tc;
@@ -439,7 +439,7 @@ void handleStage3(){
   // Step #1
   else if (stage_3.getCurrentStep() == 1){
 
-    if (!controller.readDigitalInput(FAN_CW_IO)) {
+    if (!controller.getFanState()) {
       hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOffTime, true);
       controller.turnOnFan(true);// Output of F1
       logger.println("Stage 3 F1 On");
@@ -447,12 +447,12 @@ void handleStage3(){
       publishStateChange(m_F1, true, "Stage 3 F1 Start published ");
     }
 
-    if(controller.readDigitalInput(FAN_CW_IO) && hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOnTime, true)) stage_3.nextStep();
+    if(controller.getFanState() && hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOnTime, true)) stage_3.nextStep();
   }
 
   // Step #2
   else if (stage_3.getCurrentStep() == 2){
-    if (controller.readDigitalInput(FAN_CW_IO)) {
+    if (controller.getFanState()) {
       hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
@@ -462,13 +462,13 @@ void handleStage3(){
       publishStateChange(m_F1, false, "Stage 3 F1 Stop published ");
     }
 
-    if (!controller.readDigitalInput(FAN_CW_IO) && hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOffTime, true)) stage_3.nextStep();
+    if (!controller.getFanState() && hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOffTime, true)) stage_3.nextStep();
   }
 
   // Step #3
   else if (stage_3.getCurrentStep() == 3){
 
-    if (!controller.readDigitalInput(FAN_CW_IO)){
+    if (!controller.getFanState()){
       hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(true, true);// Output of F1
@@ -477,13 +477,13 @@ void handleStage3(){
       publishStateChange(m_F1, true, "Stage 3 F1 Start published ");
     }
 
-    if (controller.readDigitalInput(FAN_CW_IO) && hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOnTime, true)) stage_3.nextStep();
+    if (controller.getFanState() && hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOnTime, true)) stage_3.nextStep();
   }
 
   // Step #4
   else if (stage_3.getCurrentStep() == 4){
 
-    if (controller.readDigitalInput(FAN_CW_IO)) {
+    if (controller.getFanState()) {
       hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
@@ -493,7 +493,7 @@ void handleStage3(){
       publishStateChange(m_F1, false, "Stage 3 F1 Stop published ");
     }
 
-    if (!controller.readDigitalInput(FAN_CW_IO) && hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOffTime, true)) stage_3.setStep(1);
+    if (!controller.getFanState() && hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOffTime, true)) stage_3.setStep(1);
   }
 
   bool finishedStage3 = false;
@@ -923,7 +923,7 @@ void destroyStage3(){
 }
 
 void onMQTTConnect() {
-  mqtt.publishData(m_F1, controller.readDigitalInput(FAN_CW_IO));
+  mqtt.publishData(m_F1, controller.getFanState());
   // mqtt.publishData(m_F2, fan_2);
   mqtt.publishData(m_S1, controller.readDigitalInput(VALVE_IO));
   mqtt.publishData(STAGE, currentState.stage);
@@ -958,7 +958,7 @@ void asyncLoopSprinkler(uint32_t &timer, uint32_t offTime, uint32_t onTime) {
 void aknowledgementRoutine(){
   mqtt.publishData(STAGE, currentState.stage);
 
-  mqtt.publishData(m_F1, controller.readDigitalInput(FAN_CW_IO));
+  mqtt.publishData(m_F1, controller.getFanState());
   mqtt.publishData(m_F1_CCW, controller.readDigitalInput(FAN_CCW_IO));
 
   mqtt.publishData(m_S1, controller.readDigitalInput(VALVE_IO));

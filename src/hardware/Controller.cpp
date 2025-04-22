@@ -528,12 +528,18 @@ void Controller::ERROR(ErrorType error){
 
 void Controller::turnOnFan(bool value, bool CCW) {
   if (value) {
+    fan_state = true;
     digitalWrite(FAN_CW_IO, CCW ? LOW : HIGH);
     digitalWrite(FAN_CCW_IO, CCW ? HIGH : LOW);
   } else {
+    fan_state = false;
     digitalWrite(FAN_CW_IO, LOW);
     digitalWrite(FAN_CCW_IO, LOW);
   }
+}
+
+bool Controller::getFanState() {
+  return fan_state;
 }
 
 StageState Controller::getLastState() {
@@ -554,7 +560,7 @@ void Controller::saveLastState(StageState current_state) {
 }
 
 bool Controller::thresLastState() {
-    
+    return preferences.getBool("thres", false);
 }
 
 void Controller::saveLogToSD(const String &message) {
