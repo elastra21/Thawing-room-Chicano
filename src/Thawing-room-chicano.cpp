@@ -200,12 +200,12 @@ bool handleInputs(button_type override) {
   if (override) pressed_btn = button = override;
 
   if      (d_start_button.released()) button = D_START;
-  else if (start_btn.released()) button = START;
-  else if (stop_btn.released())  button = STOP;
+  else if (start_btn.released())      button = START;
+  else if (stop_btn.released())       button = STOP;
 
-  if      (button == D_START) setStage(STAGE1);
-  else if (button == START)   setStage(STAGE2);
-  else if (button == STOP)    stopRoutine(); 
+  if      (button == D_START)         setStage(STAGE1);
+  else if (button == START)           setStage(STAGE2);
+  else if (button == STOP)            stopRoutine(); 
 
   return !pressed_btn;
 }

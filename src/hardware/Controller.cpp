@@ -401,7 +401,7 @@ void Controller::runConfigFile(char* ssid, char* password, char* hostname, char*
   if (doc.containsKey("SSID")) strlcpy(ssid, doc["SSID"], SSID_SIZE);
   if (doc.containsKey("WIFI_PASSWORD")) strlcpy(password, doc["WIFI_PASSWORD"], PASSWORD_SIZE);
   if (doc.containsKey("HOST_NAME")) strlcpy(hostname, doc["HOST_NAME"], HOSTNAME_SIZE);
-  if (doc.containsKey("SATIC_IP")) strlcpy(static_ip, doc["SATIC_IP"], HOSTNAME_SIZE);
+  if (doc.containsKey("STATIC_IP")) strlcpy(static_ip, doc["STATIC_IP"], HOSTNAME_SIZE);
   if (doc.containsKey("IP_ADDRESS")) strlcpy(ip_address, doc["IP_ADDRESS"], IP_ADDRESS_SIZE);
   if (doc.containsKey("PORT")) *port = doc["PORT"];
   if (doc.containsKey("USERNAME")) strlcpy(username, doc["USERNAME"], HOSTNAME_SIZE);
