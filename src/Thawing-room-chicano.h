@@ -76,16 +76,16 @@ void sendTemperaturaAlert(float temp, String sensor);
 
 // ---- Probes min and max values ----//////////////////////////////////////////////////////////////////////// 
 
-#define TA_MIN -5
-#define TA_MAX 25
+#define TA_MIN -9999
+#define TA_MAX 99999
 #define TA_DEF 15 
 
-#define TS_MIN -20
-#define TS_MAX 10
+#define TS_MIN -99999
+#define TS_MAX 99999
 #define TS_DEF 5
 
-#define TC_MIN -20
-#define TC_MAX 5
+#define TC_MIN -99999
+#define TC_MAX 99999
 #define TC_DEF -1
 
 

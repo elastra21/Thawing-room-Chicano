@@ -258,7 +258,7 @@ float Controller::readTempFrom(uint8_t channel) {
   // Serial.println(voltage_ch);
   // const float temp = (voltage_ch * temperature_per_step) + TEMPERATURE_MIN;
   const float temp = raw_voltage_ch*0.0247 - 52.933; // ramp calculated with excel trhough manual calibration
-  return temp;
+  return raw_voltage_ch;
 }
 
 // WIFI CLASS

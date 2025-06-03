@@ -270,7 +270,7 @@ void handleStage1(){
     if (!controller.getFanState()){
       hasIntervalPassed(fan_1_timer, stage1_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
 
-      controller.turnOnFan(true, true); 
+      controller.turnOnFan(true); 
       logger.println("Stage 1 F1 On");
 
       publishStateChange(m_F1, true, "Stage 1 init M_F1 ON published ");
@@ -391,10 +391,34 @@ void handleStage2(){
      if (!controller.getFanState()){
       hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
 
-      controller.turnOnFan(true, true);
+      controller.turnOnFan(true);
       logger.println("Stage 2 F1 On");
 
       publishStateChange(m_F1, true, "Stage 2 F1 Start published ");
+    }
+
+        // Calculate the Setpoint every 3 seconds in Function of Ta with the formula : Setpoint = A*(B-Ta)
+    if (hasIntervalPassed(pid_computing_timer, 3000)) {
+      Setpoint = (-(room.A * (temp_data.avg_ts)) + room.B);  //use the average of the temperature over the x last minuites
+      pid_setpoint = float(Setpoint);
+
+      logger.println("New Setpoint: " +String(pid_setpoint));
+
+
+      publishStateChange(SETPOINT, pid_setpoint, "Setpoint published ");
+    }
+
+    // Activate the PID when F1 ON
+    if (controller.getFanState() && hasIntervalPassed(turn_on_pid_timer, 3000)) {
+      pid_input = TA_F;
+      // coef_output = Output;  // Transform the Output of the PID to the desired max value
+      coef_output = (coef_pid * Output) / 100;  // Transform the Output of the PID to the desired max value
+
+      air_in_feed_PID.Compute();
+      logger.println("Computing PID: " +String(coef_output));
+      
+      controller.writeAnalogOutput(AIR_PWM, coef_output);
+      publishPID();
     }
 
     if (controller.getFanState() && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true)) stage_2.nextStep();
@@ -410,6 +434,17 @@ void handleStage2(){
       logger.println("Stage 2 F1 Off");
 
       publishStateChange(m_F1, false, "Stage 2 F1 Stop published ");
+    }
+
+  // Put the PID at 0 when F1 OFF
+    if (!controller.getFanState() && hasIntervalPassed(turn_off_pid_timer, 3000)) {
+      //Setpoint = 0;
+      pid_input = 0;
+      Output = 0;
+      coef_output = 0;
+      
+      controller.writeAnalogOutput(AIR_PWM, Output);
+      publishPID();
     }
 
     if (!controller.getFanState() && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true)) stage_2.setStep(1);
@@ -471,7 +506,7 @@ void handleStage3(){
     if (!controller.getFanState()){
       hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
 
-      controller.turnOnFan(true, true);// Output of F1
+      controller.turnOnFan(true);// Output of F1
       logger.println("Stage 3 F1 On");
 
       publishStateChange(m_F1, true, "Stage 3 F1 Start published ");
@@ -755,9 +790,9 @@ bool isValidTemperature(float temp, float minTemp, float maxTemp, const String& 
 }
 
 void updateTemperature() {
-  float ta_raw = controller.readTempFrom(TA_AI);
-  float tc_raw = controller.readTempFrom(TC_AI);
-  float ts_raw = controller.isTsContactLess() ? controller.getIRTemp() : controller.readTempFrom(TS_AI);
+  float ta_raw = controller.readTempFrom(TA_AI)*0.0247 - 52.933;
+  float tc_raw = controller.readTempFrom(TC_AI)*0.0247 - 52.933;
+  float ts_raw = controller.isTsContactLess() ? controller.getIRTemp() : controller.readTempFrom(TS_AI)*0.0361 - 30;
   
   
   TA = isValidTemperature(ta_raw, TA_MIN, TA_MAX, "TA") ? ta_raw : TA_DEF;
