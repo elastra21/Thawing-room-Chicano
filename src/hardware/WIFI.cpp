@@ -172,6 +172,17 @@ void WIFI::init(const char* ssid, const char* password, const char* hostname){
   this->hostname[sizeof(this->hostname) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
 }
 
+void WIFI::setStaticIP(const char* ip, const char* gateway, const char* subnet,
+                       const char* primaryDNS, const char* secondaryDNS){
+  if (static_ip.fromString(ip) && static_gateway.fromString(gateway) && static_subnet.fromString(subnet)) {
+    static_primary_dns.fromString(primaryDNS);
+    static_secondary_dns.fromString(secondaryDNS);
+    use_static_ip = true;
+  } else {
+    use_static_ip = false;
+  }
+}
+
 void WIFI::setUpWebServer(bool brigeSerial){
   /*use mdns for host name resolution*/
   while (!MDNS.begin(hostname)){ // http://esp32.local
@@ -421,6 +432,11 @@ String WIFI::getIP(){
 }
 
 void WIFI::connectToWiFi(){
+  if (use_static_ip) {
+    if(!WiFi.config(static_ip, static_gateway, static_subnet, static_primary_dns, static_secondary_dns)) {
+      DEBUG("Failed to configure static IP");
+    }
+  }
   WiFi.begin(ssid, password);
   uint32_t notConnectedCounter = 0;
   EEPROM.begin(32);

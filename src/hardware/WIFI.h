@@ -8,6 +8,7 @@
 #include <AsyncTCP.h>
 #include <WiFiMulti.h>
 #include "../secrets.h"
+#include <WiFi.h>
 #include <WiFiClient.h>
 #include <ArduinoOTA.h>
 #include <ArduinoJson.h>
@@ -41,6 +42,9 @@ class WIFI {
     void reconnect();
     bool isConnected();
 
+    void setStaticIP(const char* ip, const char* gateway, const char* subnet,
+                     const char* primaryDNS = "", const char* secondaryDNS = "");
+
     void connectToWiFi();
     bool refreshWiFiStatus();
     bool getConnectionStatus();
@@ -56,8 +60,14 @@ class WIFI {
     
     char ssid[SSID_SIZE];  
     char password[PASSWORD_SIZE];
-    char hostname[HOSTNAME_SIZE];  
+    char hostname[HOSTNAME_SIZE];
     bool last_connection_state = false;
+    bool use_static_ip = false;
+    IPAddress static_ip;
+    IPAddress static_gateway;
+    IPAddress static_subnet;
+    IPAddress static_primary_dns;
+    IPAddress static_secondary_dns;
     void DEBUG(const char *message);
     void ERROR(ErrorType error);
     bool validateJSON(const String& jsonString);
