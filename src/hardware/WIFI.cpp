@@ -172,11 +172,11 @@ void WIFI::init(const char* ssid, const char* password, const char* hostname){
   this->hostname[sizeof(this->hostname) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
 }
 
-void WIFI::setStaticIP(const char* ip, const char* gateway, const char* subnet,
-                       const char* primaryDNS, const char* secondaryDNS){
-  if (static_ip.fromString(ip) && static_gateway.fromString(gateway) && static_subnet.fromString(subnet)) {
-    static_primary_dns.fromString(primaryDNS);
-    static_secondary_dns.fromString(secondaryDNS);
+void WIFI::setStaticIP(const char* ip, const char* gateway){
+  if (static_ip.fromString(ip) && static_gateway.fromString(gateway)) {
+    static_subnet.fromString(DEFAULT_SUBNET);
+    static_primary_dns.fromString(DEFAULT_DNS1);
+    static_secondary_dns.fromString(DEFAULT_DNS2);
     use_static_ip = true;
   } else {
     use_static_ip = false;

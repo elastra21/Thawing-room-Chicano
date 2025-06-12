@@ -402,13 +402,10 @@ void Controller::runConfigFile(char* ssid, char* password, char* hostname, char*
   if (doc.containsKey("WIFI_PASSWORD")) strlcpy(password, doc["WIFI_PASSWORD"], PASSWORD_SIZE);
   if (doc.containsKey("HOST_NAME")) strlcpy(hostname, doc["HOST_NAME"], HOSTNAME_SIZE);
   if (doc.containsKey("IP_ADDRESS")) strlcpy(ip_address, doc["IP_ADDRESS"], IP_ADDRESS_SIZE);
-  if (doc.containsKey("STATIC_IP") && doc.containsKey("GATEWAY") && doc.containsKey("SUBNET")) {
+  if (doc.containsKey("STATIC_IP") && doc.containsKey("GATEWAY")) {
     const char* ip = doc["STATIC_IP"];
     const char* gateway = doc["GATEWAY"];
-    const char* subnet = doc["SUBNET"];
-    const char* dns1 = doc.containsKey("DNS_1") ? doc["DNS_1"].as<const char*>() : "";
-    const char* dns2 = doc.containsKey("DNS_2") ? doc["DNS_2"].as<const char*>() : "";
-    wifi.setStaticIP(ip, gateway, subnet, dns1, dns2);
+    wifi.setStaticIP(ip, gateway);
   }
   if (doc.containsKey("PORT")) *port = doc["PORT"];
   if (doc.containsKey("USERNAME")) strlcpy(username, doc["USERNAME"], HOSTNAME_SIZE);
