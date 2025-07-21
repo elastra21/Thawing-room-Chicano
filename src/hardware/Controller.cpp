@@ -257,7 +257,7 @@ float Controller::readTempFrom(uint8_t channel) {
   // const float voltage_ch = (raw_voltage_ch * voltage_per_step);
   // Serial.println(voltage_ch);
   // const float temp = (voltage_ch * temperature_per_step) + TEMPERATURE_MIN;
-  const float temp = raw_voltage_ch*0.0247 - 52.933; // ramp calculated with excel trhough manual calibration
+  const float temp = raw_voltage_ch*0.0263 -64.5; // ramp calculated with excel trhough manual calibration
   return temp;
 }
 
@@ -532,13 +532,18 @@ void Controller::ERROR(ErrorType error){
 
 void Controller::turnOnFan(bool value, bool CCW) {
   if (value) {
-    digitalWrite(FAN_IO, HIGH);
-    if(CCW) digitalWrite(FAN_CCW_IO, HIGH);
-    else digitalWrite(FAN_CCW_IO, LOW);
+    fan_state = true;
+    digitalWrite(FAN_CW_IO, CCW ? LOW : HIGH);
+    digitalWrite(FAN_CCW_IO, CCW ? HIGH : LOW);
   } else {
-    digitalWrite(FAN_IO, LOW);
+    fan_state = false;
+    digitalWrite(FAN_CW_IO, LOW);
     digitalWrite(FAN_CCW_IO, LOW);
   }
+}
+
+bool Controller::getFanState() {
+  return fan_state;
 }
 
 StageState Controller::getLastState() {

@@ -15,14 +15,14 @@
 #define RESOLUTION  6    
 
 //------------ IO's    -------------------------------------------------------------------->
-#define STAGE_1_IO  PORT_D0   
-#define STAGE_2_IO  PORT_D1
-#define STAGE_3_IO  PORT_D2
+#define STAGE_1_IO  PORT_C0   
+#define STAGE_2_IO  PORT_C1
+#define STAGE_3_IO  PORT_C2
 
-#define VALVE_IO        PORT_C3 // changed to have more logic on the board
-#define AIR_DAMPER_IO   PORT_C2
-#define FAN_CCW_IO      PORT_C1 
-#define FAN_IO          PORT_C0  
+#define VALVE_IO        PORT_D3 // changed to have more logic on the board
+#define AIR_DAMPER_IO   PORT_D2
+#define FAN_CCW_IO      PORT_D1 
+#define FAN_CW_IO       PORT_D0  
 // #define STOP_IO     DI_0    
 // #define DLY_S_IO    DI_1    
 // #define START_IO    DI_2    

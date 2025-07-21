@@ -95,6 +95,7 @@ private:
     };
 
     WIFI wifi;
+    bool fan_state = false;
     int ARRAY_SIZE = 7;
     bool ir_ts = false;
     bool lora_tc = false;
@@ -133,6 +134,7 @@ public:
     void setUpRTC();
     bool isLoraTc();
     float getIRTemp();
+    bool getFanState();
     bool isRTCConnected();
     bool isTsContactLess();
     DateTime getDateTime();
