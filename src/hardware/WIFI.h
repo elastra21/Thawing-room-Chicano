@@ -12,7 +12,7 @@
 #include <WiFiClient.h>
 #include <ArduinoOTA.h>
 #include <ArduinoJson.h>
-#include "hardware/logger.h"
+#include "./hardware/Logger.h"
 #include "resources/WebFiles.h"
 
 #define SSID_SIZE 32
@@ -38,7 +38,7 @@
 
 class WIFI {
   public:
-    void init(const char* ssid, const char* password, const char* hostname);
+    void init(const char* ssid, const char* password, const char* hostname, const char* static_ip = NULL);
     void loopOTA();
     String getIP();
     void setUpOTA();
@@ -62,7 +62,8 @@ class WIFI {
     
     char ssid[SSID_SIZE];  
     char password[PASSWORD_SIZE];
-    char hostname[HOSTNAME_SIZE];
+    char hostname[HOSTNAME_SIZE];  
+    char static_ip[IP_ADDRESS_SIZE];
     bool last_connection_state = false;
     bool use_static_ip = false;
     IPAddress static_ip;

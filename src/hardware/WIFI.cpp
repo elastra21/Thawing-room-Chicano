@@ -161,7 +161,7 @@ void WIFI::updateJsonFromForm(AsyncWebServerRequest *request, JsonVariant json) 
 }
 
 
-void WIFI::init(const char* ssid, const char* password, const char* hostname){
+void WIFI::init(const char* ssid, const char* password, const char* hostname, const char* static_ip) {
   strncpy(this->ssid, ssid, sizeof(this->ssid) - 1);
   this->ssid[sizeof(this->ssid) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
 
@@ -170,6 +170,20 @@ void WIFI::init(const char* ssid, const char* password, const char* hostname){
 
   strncpy(this->hostname, hostname, sizeof(this->hostname) - 1);
   this->hostname[sizeof(this->hostname) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
+
+  // strncpy(this->static_ip, static_ip, sizeof(this->static_ip) - 1);
+  // this->static_ip[sizeof(this->static_ip) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
+}
+
+void WIFI::setStaticIP(const char* ip, const char* gateway){
+  if (static_ip.fromString(ip) && static_gateway.fromString(gateway)) {
+    static_subnet.fromString(DEFAULT_SUBNET);
+    static_primary_dns.fromString(DEFAULT_DNS1);
+    static_secondary_dns.fromString(DEFAULT_DNS2);
+    use_static_ip = true;
+  } else {
+    use_static_ip = false;
+  }
 }
 
 void WIFI::setStaticIP(const char* ip, const char* gateway){

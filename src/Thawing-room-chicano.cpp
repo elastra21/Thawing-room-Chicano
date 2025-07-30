@@ -109,13 +109,14 @@ void setup() {
   char PASS[PASSWORD_SIZE];
   char HOST_NAME[HOSTNAME_SIZE];
   char IP_ADDRESS[IP_ADDRESS_SIZE];
+  char STATIC_IP[IP_ADDRESS_SIZE];
   uint16_t PORT;
   char MQTT_ID[MQTT_ID_SIZE];
   char USERNAME[MQTT_USERNAME_SIZE];
   char MQTT_PASSWORD[MQTT_PASSWORD_SIZE];
   char PREFIX_TOPIC[PREFIX_SIZE];
 
-  controller.runConfigFile(SSID, PASS, HOST_NAME, IP_ADDRESS, &PORT, MQTT_ID, USERNAME, MQTT_PASSWORD, PREFIX_TOPIC);
+  controller.runConfigFile(SSID, PASS, HOST_NAME, IP_ADDRESS, &PORT, MQTT_ID, USERNAME, MQTT_PASSWORD, PREFIX_TOPIC, STATIC_IP);
   controller.setUpDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
 
   start_btn.begin();
@@ -199,12 +200,12 @@ bool handleInputs(button_type override) {
   if (override) pressed_btn = button = override;
 
   if      (d_start_button.released()) button = D_START;
-  else if (start_btn.released()) button = START;
-  else if (stop_btn.released())  button = STOP;
+  else if (start_btn.released())      button = START;
+  else if (stop_btn.released())       button = STOP;
 
-  if      (button == D_START) setStage(STAGE1);
-  else if (button == START)   setStage(STAGE2);
-  else if (button == STOP)    stopRoutine(); 
+  if      (button == D_START)         setStage(STAGE1);
+  else if (button == START)           setStage(STAGE2);
+  else if (button == STOP)            stopRoutine(); 
 
   return !pressed_btn;
 }
