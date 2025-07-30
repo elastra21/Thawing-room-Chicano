@@ -186,17 +186,6 @@ void WIFI::setStaticIP(const char* ip, const char* gateway){
   }
 }
 
-void WIFI::setStaticIP(const char* ip, const char* gateway){
-  if (static_ip.fromString(ip) && static_gateway.fromString(gateway)) {
-    static_subnet.fromString(DEFAULT_SUBNET);
-    static_primary_dns.fromString(DEFAULT_DNS1);
-    static_secondary_dns.fromString(DEFAULT_DNS2);
-    use_static_ip = true;
-  } else {
-    use_static_ip = false;
-  }
-}
-
 void WIFI::setUpWebServer(bool brigeSerial){
   /*use mdns for host name resolution*/
   while (!MDNS.begin(hostname)){ // http://esp32.local

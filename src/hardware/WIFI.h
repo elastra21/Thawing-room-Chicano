@@ -63,7 +63,6 @@ class WIFI {
     char ssid[SSID_SIZE];  
     char password[PASSWORD_SIZE];
     char hostname[HOSTNAME_SIZE];  
-    char static_ip[IP_ADDRESS_SIZE];
     bool last_connection_state = false;
     bool use_static_ip = false;
     IPAddress static_ip;
