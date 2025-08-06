@@ -514,8 +514,6 @@ void Controller::setUpDefaultParameters(stage_parameters &stage1_params, stage_p
 void Controller::WiFiLoop() {
   if (!isWiFiConnected()) {
     reconnectWiFi();
-    vTaskDelay(500 / portTICK_PERIOD_MS);
-    return;
   }
 }
 

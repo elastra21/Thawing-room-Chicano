@@ -54,6 +54,7 @@ void MqttClient::reconnect() {
         if (mqttClient.connect(mqtt_id, mqtt_username, mqtt_password)) {
           DEBUG("connected");
           subscribeRoutine();
+          no_service_available = false;
           reconnectAttempts = 0; // Resetear los intentos si la conexión es exitosa
         } else {
           DEBUG(("failed, rc= " + String(mqttClient.state()) + ", try again in 2 minutes").c_str());
