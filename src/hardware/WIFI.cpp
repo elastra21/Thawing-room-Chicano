@@ -514,6 +514,10 @@ bool WIFI::isConnected(){
 }
 
 void WIFI::reconnect(){
+  uint32_t now = millis();
+  if (now - last_reconnect_attempt < RECONNECT_INTERVAL_MS) return;
+  last_reconnect_attempt = now;
+
   WiFi.begin(ssid, password);
   uint8_t timeout = 0;
   vTaskDelay(2000 / portTICK_PERIOD_MS);

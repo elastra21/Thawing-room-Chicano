@@ -92,8 +92,11 @@ void printStackUsage() {
 void backgroundTasks(void* pvParameters) {
   for (;;) {
     controller.WiFiLoop();
-    
+
     if(controller.isWiFiConnected()) {
+      if(!mqtt.isConnected()) {
+        mqtt.reconnect();
+      }
       controller.loopOTA();
     }
     // printStackUsage(); // Monitorea el uso de la pila

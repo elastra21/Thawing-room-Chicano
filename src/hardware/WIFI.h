@@ -22,6 +22,7 @@
 #define DEFAULT_SUBNET "255.255.255.0"
 #define DEFAULT_DNS1 "8.8.8.8"
 #define DEFAULT_DNS2 "1.1.1.1"
+#define RECONNECT_INTERVAL_MS 300000  // retry every 5 minutes
 
 // ERROR MESSAGES
 #define ERR_WRONG_CREDENTIALS "Wrong credentials"
@@ -70,6 +71,7 @@ class WIFI {
     IPAddress static_subnet;
     IPAddress static_primary_dns;
     IPAddress static_secondary_dns;
+    uint32_t last_reconnect_attempt = 0;
     void DEBUG(const char *message);
     void ERROR(ErrorType error);
     bool validateJSON(const String& jsonString);
