@@ -89,24 +89,28 @@ void Controller::setUpRTC() {
   }
 
   DateTime now = rtc.now();
-  if (true) {
+  if (rtc.lostPower() || now.year() < 2023) {
     DEBUG("RTC time seems invalid. Adjusting to NTP time.");
-    
-    timeClient.begin();
-    timeClient.setTimeOffset(SECS_IN_HR * TIME_ZONE_OFFSET_HRS);
-    timeClient.setUpdateInterval(SECS_IN_HR);
-    timeClient.update();
 
-    delay(1000); 
+    if (isWiFiConnected()) {
+      timeClient.begin();
+      timeClient.setTimeOffset(SECS_IN_HR * TIME_ZONE_OFFSET_HRS);
+      timeClient.setUpdateInterval(SECS_IN_HR);
 
-    long epochTime = timeClient.getEpochTime();
+      if (timeClient.update()) {
+        long epochTime = timeClient.getEpochTime();
 
-    // Convert received time from Epoch format to DateTime format
-    DateTime ntpTime(epochTime);
+        // Convert received time from Epoch format to DateTime format
+        DateTime ntpTime(epochTime);
 
-    // Adjust RTC
-    rtc.adjust(ntpTime);
-
+        // Adjust RTC
+        rtc.adjust(ntpTime);
+      } else {
+        DEBUG("Failed to get NTP time");
+      }
+    } else {
+      DEBUG("Skipping NTP sync: WiFi not connected");
+    }
   }
 
   if(isTsContactLess()) setUpIRTc();
