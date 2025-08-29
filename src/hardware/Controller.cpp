@@ -81,7 +81,7 @@ void Controller::setUpI2C() {
 
 void Controller::setUpRTC() {
   uint32_t currentMillis = millis();
-  const uint16_t timeout = 120; //secs
+  const uint16_t timeout = 2*1000; //secs
   while (!rtc.begin(&rtc_i2c)){
     DEBUG(("Couldn't find RTC, restarting in "+ String(timeout - (millis() - currentMillis)/1000) + " seconds...").c_str());
     delay(1000);
