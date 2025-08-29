@@ -567,6 +567,30 @@ void setupMqttEvents() {
     logger.println(String(TC));
   });
   
+  // PID Parameters - these can be grouped logically
+  mqtt.createMqttEvent(sub_P, [](char *topic, uint8_t *payload, unsigned int len) {
+    Kp = mqtt.responseToFloat(payload, len);
+    logger.println("P set to: " + String(Kp));
+    kp_has_changed = 1;
+  });
+  
+  mqtt.createMqttEvent(sub_I, [](char *topic, uint8_t *payload, unsigned int len) {
+    Ki = mqtt.responseToFloat(payload, len);
+    logger.println("I set to: " + String(Ki));
+    ki_has_changed = 1;
+  });
+  
+  mqtt.createMqttEvent(sub_D, [](char *topic, uint8_t *payload, unsigned int len) {
+    Kd = mqtt.responseToFloat(payload, len);
+    logger.println("D set to: " + String(Kd));
+    kd_has_changed = 1;
+  });
+  
+  mqtt.createMqttEvent(sub_coefPID, [](char *topic, uint8_t *payload, unsigned int len) {
+    coef_pid = mqtt.responseToInt(payload, len);
+    logger.print("coef PID : " + String(coef_pid));
+  });
+  
   logger.println("[MqttClient] Event-driven handlers registered for key topics");
 }
 
@@ -679,34 +703,13 @@ void callback(char *topic, byte *payload, unsigned int len) {
     update_default_parameters = true;
   }
 
-  // PID update
-  if (mqtt.isTopicEqual(topic, sub_P)) {
-    Kp = mqtt.responseToFloat(payload, len);
-    logger.println("P set to: " + String(Kp));
-    kp_has_changed = 1;
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_I)) {
-    Ki = mqtt.responseToFloat(payload, len);
-    logger.println("I set to: " + String(Ki));
-    ki_has_changed = 1;
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_D)) {
-    Kd = mqtt.responseToFloat(payload, len);
-    logger.println("D set to: " + String(Kd));
-    kd_has_changed = 1;
-  }
-
+  // PID update - these are now handled by event-driven lambdas
+  // NOTE: sub_P, sub_I, sub_D, and sub_coefPID are handled by lambda functions
+  
   if (kp_has_changed == 1 && ki_has_changed == 1 && kd_has_changed == 1) {
     air_in_feed_PID.SetTunings(Kp, Ki, Kd);
     logger.println("New PID parameter updated");
     kp_has_changed = ki_has_changed = kd_has_changed = 0;
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_coefPID)) {
-    coef_pid = mqtt.responseToInt(payload, len);
-    logger.print("coef PID : " + String(coef_pid));
   }
 
   // Target temperature Ts & Tc update
