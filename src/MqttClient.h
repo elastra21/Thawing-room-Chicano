@@ -84,7 +84,10 @@
 #define ON_RECONNECT_ERR_TXT "Error on reconnect"
 #define ON_SUBSCRIBE_ERR_TXT "Error on subscribe"
 
-
+struct mqtt_event {
+  const char* topic;
+  std::function<void (char *, uint8_t *, unsigned int)> callback;
+};
 
 class MqttClient {
   public:
@@ -102,7 +105,9 @@ class MqttClient {
     float responseToFloat(byte *value, size_t len);
     bool isTopicEqual(const char* a, const char* b);
     void onConnect(std::function<void ()> callback);
+    mqtt_event searchEventByTopic(const char* topic);
     void setCallback(std::function<void (char *, uint8_t *, unsigned int)> callback);
+    void createMqttEvent(const char* topic, std::function<void (char *, uint8_t *, unsigned int)> callback);
     // void publishEcava(const String* topics, const String* values, int arraySize, const char* mqttTopic);
     // String getIsoTimestamp();
     // void exampleCall();
