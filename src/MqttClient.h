@@ -4,6 +4,7 @@
 #include <PubSubClient.h>
 #include "./hardware/Logger.h" 
 #include <WiFiClientSecure.h>
+#include <vector>
 
 #define MQTT_USERNAME_SIZE 32
 #define MQTT_ID_SIZE 32
@@ -91,6 +92,7 @@ struct mqtt_event {
 
 class MqttClient {
   public:
+    MqttClient(); // Constructor
     void loop();
     void connect(const char *domain, uint16_t port, const char *id, const char *username, const char *password);
     void reconnect();
@@ -107,7 +109,10 @@ class MqttClient {
     void onConnect(std::function<void ()> callback);
     mqtt_event searchEventByTopic(const char* topic);
     void setCallback(std::function<void (char *, uint8_t *, unsigned int)> callback);
+    void setEventDispatcher(); // Enable event-based dispatch system
     void createMqttEvent(const char* topic, std::function<void (char *, uint8_t *, unsigned int)> callback);
+    void dispatchEvent(char* topic, uint8_t* payload, unsigned int length);
+    void enableHybridMode(std::function<void (char *, uint8_t *, unsigned int)> fallbackCallback); // Enable both event system and fallback callback
     // void publishEcava(const String* topics, const String* values, int arraySize, const char* mqttTopic);
     // String getIsoTimestamp();
     // void exampleCall();
@@ -131,6 +136,10 @@ class MqttClient {
     bool last_connection_state = false;
     std::function<void ()> callback_connect = NULL;
     void ERROR (ErrorType error);
+
+    // Event storage for MQTT topics and their callbacks
+    std::vector<mqtt_event> events;
+    std::function<void (char *, uint8_t *, unsigned int)> fallback_callback = nullptr;
 
     // map list of suscribed topics
     const char* topics[SUB_ARRAY_SIZE] = {
