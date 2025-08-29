@@ -140,7 +140,8 @@ void setup() {
   logger.println("Last state: " + String(last_state.stage) + " " + String(last_state.step));
   if (last_state.stage != IDLE) currentState = last_state;
 
-  mqtt.setCallback(callback);
+  // Set up event-driven MQTT handling with hybrid mode for gradual migration
+  setupMqttEvents();
   mqtt.onConnect(onMQTTConnect);
   mqtt.connect(IP_ADDRESS, PORT, MQTT_ID, USERNAME, MQTT_PASSWORD);
 
@@ -508,49 +509,74 @@ void idle(){
   // delay(1000);
 }
 
+//// Setup event-driven MQTT handling ////////////////////////////////////////////////////////////////////
+void setupMqttEvents() {
+  // Enable hybrid mode - this allows event-driven handlers for specific topics
+  // while falling back to the original callback for unhandled topics
+  mqtt.enableHybridMode(callback);
+  
+  // Register event handlers using lambda functions for key topics
+  
+  // STOP button handler  
+  mqtt.createMqttEvent(sub_stop, [](char *topic, uint8_t *payload, unsigned int len) {
+    const bool value = mqtt.responseToInt(payload, len);
+    if (!value) return;
+    handleInputs(STOP);
+    logger.println("stop BUTTON PRESSED ON NODE RED");
+  });
+  
+  // START button handler
+  mqtt.createMqttEvent(sub_start, [](char *topic, uint8_t *payload, unsigned int len) {
+    const bool value = mqtt.responseToInt(payload, len);
+    if (!value) return;
+    handleInputs(START);
+    logger.println("START BUTTON PRESSED ON NODE RED");
+  });
+  
+  // Delayed START button handler
+  mqtt.createMqttEvent(sub_d_start, [](char *topic, uint8_t *payload, unsigned int len) {
+    const bool value = mqtt.responseToInt(payload, len);
+    if (!value) return;
+    handleInputs(D_START);
+    logger.println("d_start BUTTON PRESSED ON NODE RED");
+  });
+  
+  // Lora TC configuration handler
+  mqtt.createMqttEvent(IS_TC_LORA, [](char *topic, uint8_t *payload, unsigned int len) {
+    controller.setLoraTc(mqtt.responseToInt(payload, len));
+    logger.println("Lora TC is now: " + String(controller.isLoraTc()));
+  });
+  
+  // IR TS configuration handler  
+  mqtt.createMqttEvent(IS_TS_IR, [](char *topic, uint8_t *payload, unsigned int len) {
+    controller.setTsContactLess(mqtt.responseToInt(payload, len));
+    logger.println("Ts is now: " + String(controller.isTsContactLess()));
+  });
+  
+  // Choose TS handler
+  mqtt.createMqttEvent(sub_chooseTs, [](char *topic, uint8_t *payload, unsigned int len) {
+    is_rts_ir = mqtt.responseToInt(payload, len);
+    logger.println("Ts is now IR" + String(is_rts_ir));
+  });
+  
+  // Lora TC data handler
+  mqtt.createMqttEvent(LORA_TC, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (!controller.isLoraTc()) return;
+    const float tc_raw = mqtt.responseToFloat(payload, len);
+    TC = isValidTemperature(tc_raw, TC_MIN, TC_MAX, "TC") ? tc_raw : TC_DEF;
+    logger.println(String(TC));
+  });
+  
+  logger.println("[MqttClient] Event-driven handlers registered for key topics");
+}
+
 //// fct Callback ==> RECEIVE MQTT MESSAGES ////////////////////////////////////////////////////////////////////
 void callback(char *topic, byte *payload, unsigned int len) {
   logger.println("Message arrived [" + String(topic) + "]" );
 
-   // STOP
-  if (mqtt.isTopicEqual(topic, sub_stop) ) {
-    const bool value = mqtt.responseToInt(payload, len);
-    if (!value) return;
-
-    handleInputs(STOP);
-    logger.println("stop BUTTON PRESSED ON NODE RED" );
-  }
-
-  // Choose TS
-  if (mqtt.isTopicEqual(topic, sub_chooseTs)) {
-    is_rts_ir = mqtt.responseToInt(payload, len);
-    logger.println("Ts is now IR" + String(is_rts_ir));
-  }
-
-  // LoRaTc
-  if (mqtt.isTopicEqual(topic, LORA_TC)) {
-    if (!controller.isLoraTc()) return;
-
-    const float tc_raw = mqtt.responseToFloat(payload, len);
-    TC = isValidTemperature(tc_raw, TC_MIN, TC_MAX, "TC") ? tc_raw : TC_DEF;
-
-    logger.println(String(TC));
-  }
-
-  if (mqtt.isTopicEqual(topic, IS_TC_LORA)) {
-    controller.setLoraTc(mqtt.responseToInt(payload, len));
-    
-    logger.println("Lora TC is now: " + String(controller.isLoraTc()));
-  }
-
-  // IR_TS
-  if (mqtt.isTopicEqual(topic, IS_TS_IR)) {
-    controller.setTsContactLess(mqtt.responseToInt(payload, len));
-
-    logger.println("Ts is now: " + String(controller.isTsContactLess()));
-  }
+  // NOTE: Key topics like sub_stop, sub_start, sub_d_start, IS_TC_LORA, IS_TS_IR, 
+  // sub_chooseTs, and LORA_TC are now handled by event-driven lambdas in setupMqttEvents()
   
-
   if (currentState.stage != IDLE) return;
 
       // Delayed start timing
@@ -698,23 +724,8 @@ void callback(char *topic, byte *payload, unsigned int len) {
   }
 
   // START  
-  if (mqtt.isTopicEqual(topic, sub_start)) {
-    const bool value = mqtt.responseToInt(payload, len);
-    if (!value) return;
-
-    handleInputs(START);
-    logger.println("START BUTTON PRESSED ON NODE RED");
-  }
+  // NOTE: START and D_START are now handled by event-driven lambdas
   
-  // D_START
-  if (mqtt.isTopicEqual(topic, sub_d_start)) {
-    const bool value = mqtt.responseToInt(payload, len);
-    if (!value) return;
-    
-    handleInputs(D_START);
-    logger.println("d_start BUTTON PRESSED ON NODE RED");
-  }
-
   if(update_default_parameters) controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
 }
 
