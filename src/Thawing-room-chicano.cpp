@@ -591,145 +591,155 @@ void setupMqttEvents() {
     logger.print("coef PID : " + String(coef_pid));
   });
   
-  logger.println("[MqttClient] Event-driven handlers registered for key topics");
+  // Delayed start timing events
+  mqtt.createMqttEvent(sub_hours, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage2_hour = mqtt.responseToFloat(payload, len);
+    logger.println("Stage 2 Hours set to: " + String(stage2_hour));
+  });
+  
+  mqtt.createMqttEvent(sub_minutes, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage2_minute = mqtt.responseToFloat(payload, len);
+    logger.println("Stage 2 Minutes set to: " + String(stage2_minute));
+  });
+  
+  mqtt.createMqttEvent(sub_day, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage2_day = mqtt.responseToFloat(payload, len);
+    logger.println("Stage 2 Day set to: " + String(stage2_day));
+  });
+  
+  mqtt.createMqttEvent(sub_month, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage2_month = mqtt.responseToFloat(payload, len);
+    logger.println("Stage 2 Month set to: " + String(stage2_month));
+  });
+  
+  // Stage 1 fan timing events
+  mqtt.createMqttEvent(sub_f1_st1_ontime, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage1_params.fanOnTime = mqtt.responseToFloat(payload, len);
+    logger.println("F1 Stage 1 on time set to: " + String(stage1_params.fanOnTime) + " MINS");
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  mqtt.createMqttEvent(sub_f1_st1_offtime, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage1_params.fanOffTime = mqtt.responseToFloat(payload, len);
+    logger.println("F1 Stage 1 off time set to: " + String(stage1_params.fanOffTime) + " MINS");
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  // Stage 2 fan timing events
+  mqtt.createMqttEvent(sub_f1_st2_ontime, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage2_params.fanOnTime = mqtt.responseToFloat(payload, len);
+    logger.println("F1 Stage 2 on time set to: " + String(stage2_params.fanOnTime) + " MINS");
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  mqtt.createMqttEvent(sub_f1_st2_offtime, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage2_params.fanOffTime = mqtt.responseToFloat(payload, len);
+    logger.println("F1 Stage 2 off time set to: " + String(stage2_params.fanOffTime) + " MINS");
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  // Stage 2 sprinkler timing events
+  mqtt.createMqttEvent(sub_s1_st2_ontime, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage2_params.sprinklerOnTime = mqtt.responseToFloat(payload, len);
+    logger.println("S1 Stage 2 on time set to: " + String(stage2_params.sprinklerOnTime) + " MINS");
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  mqtt.createMqttEvent(sub_s1_st2_offtime, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage2_params.sprinklerOffTime = mqtt.responseToFloat(payload, len);
+    logger.println("S1 Stage 2 off time set to: " + String(stage2_params.sprinklerOffTime) + " MINS");
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  // Stage 3 fan timing events
+  mqtt.createMqttEvent(sub_f1_st3_ontime, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage3_params.fanOnTime = mqtt.responseToFloat(payload, len);
+    logger.println("F1 Stage 3 on time set to: " + String(stage3_params.fanOnTime) + " MINS");
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  mqtt.createMqttEvent(sub_f1_st3_offtime, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage3_params.fanOffTime = mqtt.responseToFloat(payload, len);
+    logger.println("F1 Stage 3 off time set to: " + String(stage3_params.fanOffTime) + " MINS");
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  // Stage 3 sprinkler timing events
+  mqtt.createMqttEvent(sub_s1_st3_ontime, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage3_params.sprinklerOnTime = mqtt.responseToFloat(payload, len);
+    logger.println("S1 Stage 3 on time set to: " + String(stage3_params.sprinklerOnTime) + " MINS");
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  mqtt.createMqttEvent(sub_s1_st3_offtime, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    stage3_params.sprinklerOffTime = mqtt.responseToFloat(payload, len);
+    logger.println("S1 Stage 3 off time set to: " + String(stage3_params.sprinklerOffTime) + " MINS");
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  // Room parameters A & B
+  mqtt.createMqttEvent(sub_A, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    room.A = mqtt.responseToFloat(payload, len);
+    logger.println("A set to: " + String(room.A));
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  mqtt.createMqttEvent(sub_B, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    room.B = mqtt.responseToFloat(payload, len);
+    logger.println("B set to: " + String(room.B));
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  // Target temperature setpoints
+  mqtt.createMqttEvent(sub_ts_set, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    temp_set.ts = mqtt.responseToFloat(payload, len);
+    logger.println("Ts Condition set to: " + String(temp_set.ts));
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  mqtt.createMqttEvent(sub_tc_set, [](char *topic, uint8_t *payload, unsigned int len) {
+    if (currentState.stage != IDLE) return;
+    temp_set.tc = mqtt.responseToFloat(payload, len);
+    logger.println("Tc Condition set to: " + String(temp_set.tc));
+    controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  });
+  
+  logger.println("[MqttClient] All 29 MQTT topics migrated to event-driven handlers");
 }
 
 //// fct Callback ==> RECEIVE MQTT MESSAGES ////////////////////////////////////////////////////////////////////
 void callback(char *topic, byte *payload, unsigned int len) {
-  logger.println("Message arrived [" + String(topic) + "]" );
+  logger.println("Message arrived [" + String(topic) + "] - fallback handler");
 
-  // NOTE: Key topics like sub_stop, sub_start, sub_d_start, IS_TC_LORA, IS_TS_IR, 
-  // sub_chooseTs, and LORA_TC are now handled by event-driven lambdas in setupMqttEvents()
+  // NOTE: All 29 MQTT topics are now handled by event-driven lambdas in setupMqttEvents()
+  // This fallback callback handles any unregistered topics and PID tuning logic
   
-  if (currentState.stage != IDLE) return;
-
-      // Delayed start timing
-  if (mqtt.isTopicEqual(topic, sub_hours)) {
-    stage2_hour = mqtt.responseToFloat(payload, len);
-    logger.println("Stage 2 Hours set to: " + String(stage2_minute));
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_minutes)) {
-    stage2_minute = mqtt.responseToFloat(payload, len);
-    logger.println("Stage 2 Minutes set to: " + String(stage2_minute));
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_day)) {
-    stage2_day = mqtt.responseToFloat(payload, len);
-    logger.println("Stage 2 Day set to: " + String(stage2_day));
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_month)) {
-    stage2_month = mqtt.responseToFloat(payload, len);
-    logger.println("Stage 2 Month set to: " + String(stage2_month));
-  }
-
-  bool update_default_parameters = false;
-
-  //F1 stg1 on/off time
-  if (mqtt.isTopicEqual(topic, sub_f1_st1_ontime)) {
-    stage1_params.fanOnTime  = mqtt.responseToFloat(payload, len);
-    logger.println("F1 Stage 1 on time set to: " + String(stage1_params.fanOnTime) + " MINS");
-    update_default_parameters = true;
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_f1_st1_offtime)) {
-    stage1_params.fanOffTime = mqtt.responseToFloat(payload, len);
-    logger.println("F1 Stage 1 off time set to: " + String(stage1_params.fanOffTime) + " MINS");
-    update_default_parameters = true;
-  }
-
-  // F1 and S1 STAGE 2 on/off time
-  if (mqtt.isTopicEqual(topic, sub_f1_st2_ontime)) {
-    stage2_params.fanOnTime = mqtt.responseToFloat(payload, len);
-    logger.println("F1 Stage 2 on time set to: " + String(stage2_params.fanOnTime) + " MINS");
-    update_default_parameters = true;
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_f1_st2_offtime)) {
-    stage2_params.fanOffTime  = mqtt.responseToFloat(payload, len);
-    logger.println("F1 Stage 2 off time set to: " + String(stage2_params.fanOffTime ) + " MINS");
-    update_default_parameters = true;
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_s1_st2_ontime)) {
-    stage2_params.sprinklerOnTime = mqtt.responseToFloat(payload, len);
-    logger.println("S1 Stage 2 on time set to: " + String(stage2_params.sprinklerOnTime) + " MINS");
-    update_default_parameters = true;
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_s1_st2_offtime)) {
-    stage2_params.sprinklerOffTime = mqtt.responseToFloat(payload, len);
-    logger.println("S1 Stage 2 off time set to: " + String(stage2_params.sprinklerOffTime) + " MINS");
-    update_default_parameters = true;
-  }
-
-  // F1 and S1 STAGE 3 on/off time
-  if (mqtt.isTopicEqual(topic, sub_f1_st3_ontime)) {
-    stage3_params.fanOnTime = mqtt.responseToFloat(payload, len);
-    logger.println("F1 Stage 3 on time set to: " + String(stage3_params.fanOnTime) + " MINS");
-    update_default_parameters = true;
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_f1_st3_offtime)) {
-    stage3_params.fanOffTime = mqtt.responseToFloat(payload, len);
-    logger.println("F1 Stage 3 off time set to: " + String(stage3_params.fanOffTime) + " MINS");
-    update_default_parameters = true;
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_s1_st3_ontime)) {
-    stage3_params.sprinklerOnTime = mqtt.responseToFloat(payload, len);
-    logger.println("S1 Stage 3 on time set to: " + String(stage3_params.sprinklerOnTime) + " MINS");
-    update_default_parameters = true;
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_s1_st3_offtime)) {
-    stage3_params.sprinklerOffTime = mqtt.responseToFloat(payload, len);
-    logger.println("S1 Stage 3 off time set to: " + String(stage3_params.sprinklerOffTime) + " MINS");
-    update_default_parameters = true;
-  }
-
-  // Sub A and Sub B value update
-  if (mqtt.isTopicEqual(topic, sub_A)) {
-    room.A = mqtt.responseToFloat(payload, len);
-    // room.A = atoi((char *)payload);
-    logger.println("A set to: " + String(room.A));
-    update_default_parameters = true;
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_B)) {
-    room.B = mqtt.responseToFloat(payload, len);
-    logger.println("B set to: " + String(room.B));
-    update_default_parameters = true;
-  }
-
-  // PID update - these are now handled by event-driven lambdas
-  // NOTE: sub_P, sub_I, sub_D, and sub_coefPID are handled by lambda functions
-  
+  // Handle PID parameter synchronization (shared logic between P, I, D handlers)
   if (kp_has_changed == 1 && ki_has_changed == 1 && kd_has_changed == 1) {
     air_in_feed_PID.SetTunings(Kp, Ki, Kd);
     logger.println("New PID parameter updated");
     kp_has_changed = ki_has_changed = kd_has_changed = 0;
   }
-
-  // Target temperature Ts & Tc update
-  if (mqtt.isTopicEqual(topic, sub_ts_set)) {
-    temp_set.ts = mqtt.responseToFloat(payload, len);
-    logger.println("Ts Condition set to: " + String(temp_set.ts));
-    update_default_parameters = true;
-  }
-
-  if (mqtt.isTopicEqual(topic, sub_tc_set)) {
-    temp_set.tc = mqtt.responseToFloat(payload, len);
-    // Tc_cond = N_tset->N_tc_set;
-    logger.println("Tc Condition set to: " + String(temp_set.tc));
-    update_default_parameters = true;
-  }
-
-  // START  
-  // NOTE: START and D_START are now handled by event-driven lambdas
   
-  if(update_default_parameters) controller.updateDefaultParameters(stage1_params, stage2_params, stage3_params, room, temp_set);
+  // Log any unhandled topics for debugging
+  logger.println("Topic handled by fallback: " + String(topic));
 }
 
 void stopRoutine() {
