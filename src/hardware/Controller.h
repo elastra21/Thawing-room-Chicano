@@ -102,6 +102,15 @@ private:
     Preferences preferences;
     int8_t TIME_ZONE_OFFSET_HRS = 0;
 
+
+    // Digital pins configuration
+    uint8_t outputs[6] = {STAGE_1_IO, STAGE_2_IO, STAGE_3_IO, FAN_CCW_IO, FAN_CW_IO, AIR_DAMPER_IO};
+    uint8_t outputs_size = 6;
+    uint8_t inputs[3] = {START_IO, DLY_S_IO, STOP_IO};
+    uint8_t inputs_size = 3;
+    uint8_t pulled_up[0] = {};  // No pulled up pins currently defined
+    uint8_t pulled_up_size = 0;
+
     void setUpI2C();
     void setUpIOS();
     void setUpLogger();
