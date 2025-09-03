@@ -9,7 +9,7 @@
 #include "MqttClient.h"
 #include <TaskScheduler.h>
 #include "./hardware/Logger.h"
-#include "./hardware/config.h"
+#include "config.h"
 #include "./hardware/Controller.h"
 
 //------------ structure definitions an flags -------------------------------------------------------->
