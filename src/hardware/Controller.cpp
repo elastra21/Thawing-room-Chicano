@@ -55,7 +55,11 @@ void Controller::setUpAnalogOutputs() {
 }
 
 void Controller::setUpDigitalOutputs() {
-  for (uint8_t i = 0; i < outputs_size; i++) pinMode(outputs[i], OUTPUT);
+  for (uint8_t i = 0; i < outputs_size; i++) {
+    pinMode(outputs[i], OUTPUT);
+    digitalWrite(outputs[i], LOW);
+  }
+
   pinMode(VALVE_IO, OUTPUT);
 
 }
@@ -403,6 +407,11 @@ void Controller::runConfigFile(char* ssid, char* password, char* hostname, char*
   if (doc.containsKey("HOST_NAME")) strlcpy(hostname, doc["HOST_NAME"], HOSTNAME_SIZE);
   if (doc.containsKey("STATIC_IP")) strlcpy(static_ip, doc["STATIC_IP"], HOSTNAME_SIZE);
   if (doc.containsKey("IP_ADDRESS")) strlcpy(ip_address, doc["IP_ADDRESS"], IP_ADDRESS_SIZE);
+  if (doc.containsKey("STATIC_IP") && doc.containsKey("GATEWAY")) {
+    const char* ip = doc["STATIC_IP"];
+    const char* gateway = doc["GATEWAY"];
+    wifi.setStaticIP(ip, gateway);
+  } 
   if (doc.containsKey("PORT")) *port = doc["PORT"];
   if (doc.containsKey("USERNAME")) strlcpy(username, doc["USERNAME"], HOSTNAME_SIZE);
   // if (doc.containsKey("TOPIC")) strlcpy(prefix_topic, doc["TOPIC"], HOSTNAME_SIZE);

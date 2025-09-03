@@ -18,6 +18,9 @@
 #define PASSWORD_SIZE 64
 #define HOSTNAME_SIZE 32
 #define IP_ADDRESS_SIZE 16
+#define DEFAULT_SUBNET "255.255.255.0"
+#define DEFAULT_DNS1 "8.8.8.8"
+#define DEFAULT_DNS2 "1.1.1.1"
 
 // ERROR MESSAGES
 #define ERR_WRONG_CREDENTIALS "Wrong credentials"
@@ -41,6 +44,9 @@ class WIFI {
     void reconnect();
     bool isConnected();
 
+    void setStaticIP(const char* ip, const char* gateway);
+
+
     void connectToWiFi();
     bool refreshWiFiStatus();
     bool getConnectionStatus();
@@ -57,7 +63,12 @@ class WIFI {
     char ssid[SSID_SIZE];  
     char password[PASSWORD_SIZE];
     char hostname[HOSTNAME_SIZE];  
-    char static_ip[IP_ADDRESS_SIZE];
+    bool use_static_ip = false;
+    IPAddress static_ip;
+    IPAddress static_gateway;
+    IPAddress static_subnet;
+    IPAddress static_primary_dns;
+    IPAddress static_secondary_dns;
     bool last_connection_state = false;
     void DEBUG(const char *message);
     void ERROR(ErrorType error);
