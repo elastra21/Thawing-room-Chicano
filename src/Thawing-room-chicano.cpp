@@ -76,6 +76,9 @@ StageState currentState = {IDLE, 0};
 // ########################## TASKS ##########################
 Task low_priority_msgs(10000, TASK_FOREVER, &aknowledgementRoutine);
 Task high_priority_msgs(3000, TASK_FOREVER, &publishTemperatures);
+Task turn_off_flush(20, TASK_ONCE, &turn_off_flush_routine);
+Task turn_on_flush(20, TASK_ONCE, &turn_on_flush_routine);
+
 Scheduler runner;
 
 MqttClient mqtt;
@@ -130,9 +133,15 @@ void setup() {
   runner.init();
   runner.addTask(low_priority_msgs);
   runner.addTask(high_priority_msgs);
+  runner.addTask(turn_on_flush);
+  runner.addTask(turn_off_flush);
   low_priority_msgs.enable();
   high_priority_msgs.enable();
-  
+
+  if (false /* flush active */) {
+    turn_on_flush.enable();
+  }
+
   DateTime current_date = controller.getDateTime();
   logger.println("Current date: " + String(current_date.hour()) + ":" + String(current_date.minute()) + " " + String(current_date.day()) + "/" + String(current_date.month()));
 
@@ -975,4 +984,13 @@ void aknowledgementRoutine(){
   const String msg = controller.jsonBuilder(keys, values, size);
 
   if (currentState.stage > IDLE) controller.saveLogToSD(msg);
+}
+
+void turn_on_flush_routine() {
+  controller.writeDigitalOutput(FLUSH_IO, HIGH);
+  turn_off_flush.restartDelayed(10*1000);
+}
+
+void turn_off_flush_routine() {
+  controller.writeDigitalOutput(FLUSH_IO, LOW);
 }

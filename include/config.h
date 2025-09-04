@@ -18,6 +18,8 @@
 #define STAGE_1_IO  PORT_C0   
 #define STAGE_2_IO  PORT_C1
 #define STAGE_3_IO  PORT_C2
+#define FLUSH_IO    PORT_C3
+
 
 #define VALVE_IO        PORT_D3 // changed to have more logic on the board
 #define AIR_DAMPER_IO   PORT_D2
@@ -28,8 +30,8 @@
 // #define START_IO    DI_2    
 
 #define START_IO    PORT_B0  
-#define DLY_S_IO    PORT_B1   
 #define STOP_IO     PORT_B2
+#define DLY_S_IO    PORT_B1   
 
 // #define A0    13 //ONE_WIRE_BUS  
 

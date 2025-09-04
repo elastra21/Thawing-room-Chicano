@@ -68,6 +68,8 @@ void publishStateChange(const char* topic, int state, const String& message);
 
 
 void sendTemperaturaAlert(float temp, String sensor);
+void turn_on_flush_routine();
+void turn_off_flush_routine();
 
 
 //---- timing settings -----////////////////////////////////////////////////////////////////////////////////
