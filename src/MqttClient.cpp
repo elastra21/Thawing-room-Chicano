@@ -3,7 +3,19 @@
 WiFiClient esp32Client;
 PubSubClient mqttClient(esp32Client);
 
-// void subscribeReceive(char* topic, byte* payload, unsigned int length);
+// Global reference for internal callback dispatch
+MqttClient* g_mqttClientInstance = nullptr;
+
+// Internal callback wrapper that dispatches to registered events
+void internalMqttCallback(char* topic, byte* payload, unsigned int length) {
+  if (g_mqttClientInstance) {
+    g_mqttClientInstance->dispatchEvent(topic, payload, length);
+  }
+}
+
+MqttClient::MqttClient() {
+  g_mqttClientInstance = this;
+}
 
 void MqttClient::connect(const char *domain, uint16_t port, const char *id, const char *username, const char *password) {
   strncpy(mqtt_domain, domain, sizeof(mqtt_domain) - 1);
@@ -94,6 +106,10 @@ void MqttClient::setCallback(std::function<void(char *, uint8_t *, unsigned int)
   mqttClient.setCallback(callback);
 }
 
+void MqttClient::setEventDispatcher() {
+  mqttClient.setCallback(internalMqttCallback);
+}
+
 void MqttClient::subscribeRoutine() {
   if (mqttClient.connect(mqtt_username)) {
     DEBUG("connected, subscribing");
@@ -152,4 +168,38 @@ void MqttClient::ERROR(ErrorType error){
   char buffer[100];
   snprintf(buffer, sizeof(buffer), "[ERROR -> MqttClient]: %s", errorMessages[error]);
   logger.println(buffer);
+}
+
+void MqttClient::createMqttEvent(const char* topic, std::function<void (char *, uint8_t *, unsigned int)> callback) {
+  mqtt_event event;
+  event.topic = topic;
+  event.callback = callback;
+  events.push_back(event);
+}
+
+mqtt_event MqttClient::searchEventByTopic(const char* topic) {
+  mqtt_event emptyEvent = {nullptr, nullptr};
+  
+  for (const auto& event : events) {
+    if (event.topic && strcmp(event.topic, topic) == 0) {
+      return event;
+    }
+  }
+  
+  return emptyEvent;
+}
+
+void MqttClient::dispatchEvent(char* topic, uint8_t* payload, unsigned int length) {
+  mqtt_event event = searchEventByTopic(topic);
+  if (event.callback) {
+    event.callback(topic, payload, length);
+  } else if (fallback_callback) {
+    // If no specific event handler found, use fallback callback
+    fallback_callback(topic, payload, length);
+  }
+}
+
+void MqttClient::enableHybridMode(std::function<void (char *, uint8_t *, unsigned int)> fallbackCallback) {
+  fallback_callback = fallbackCallback;
+  mqttClient.setCallback(internalMqttCallback);
 }
