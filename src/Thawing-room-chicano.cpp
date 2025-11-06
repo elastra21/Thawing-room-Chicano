@@ -895,11 +895,15 @@ void publishTemperatures() {
   temp_data.avg_tc = sensorTc.getAverage();
   temp_data.avg_ta = sensorTa.getAverage();
 
+  const float ts_pt100 = controller.readTempFrom(TS_AI);
+  const float ts_ir_mlx = controller.getIRTemp();
 
   mqtt.publishData(TA_TOPIC, temp_data.ta);
   mqtt.publishData(TS_TOPIC, temp_data.ts);
   mqtt.publishData(TC_TOPIC, temp_data.tc);
   mqtt.publishData(TI_TOPIC, temp_data.ti);
+  mqtt.publishData(TS_PT100_TOPIC, ts_pt100);
+  mqtt.publishData(TS_IR_MLX_TOPIC, ts_ir_mlx);
 
   mqtt.publishData(AVG_TA_TOPIC, temp_data.avg_ta);
   mqtt.publishData(AVG_TS_TOPIC, temp_data.avg_ts);

@@ -62,6 +62,8 @@
 #define TS_TOPIC            "cfpp3/Ts"
 #define TC_TOPIC            "cfpp3/Tc"
 #define TI_TOPIC            "cfpp3/Ti"
+#define TS_PT100_TOPIC      "cfpp3/Ts_PT100"
+#define TS_IR_MLX_TOPIC     "cfpp3/Ts_IR_MLX"
 #define PID_OUTPUT          "cfpp3/PID_output"
 #define SETPOINT            "cfpp3/setpoint"
 #define ACK_F1_ST1_ONTIME   "cfpp3/ack_f1_st1_ontime"
