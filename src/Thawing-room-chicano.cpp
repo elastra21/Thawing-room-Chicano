@@ -33,7 +33,8 @@ bool ki_has_changed = true;
 bool kd_has_changed = true;
 
 double coef_output = 0;  // Output for the infeed (New Analog Output that will be sent to S1
-uint8_t coef_pid = 100;
+uint8_t coef_pid_fwd = 100;
+uint8_t coef_pid_rev = 100;
 uint8_t Converted_Output = 0;
 
 bool is_rts_ir = 0;
@@ -341,7 +342,7 @@ void handleStage2(){
     }
 
 
-    // Calculate the Setpoint every 3 seconds in Function of Ta with the formula : Setpoint = A*(B-Ta)
+    // Calculate the Setpoint every 3 seconds in Function of Ta with the formula : Setpoint = B - A*Ts
     if (hasIntervalPassed(pid_computing_timer, 3000)) {
       Setpoint = (-(room.A * (temp_data.avg_ts)) + room.B);  //use the average of the temperature over the x last minuites
       pid_setpoint = float(Setpoint);
@@ -356,7 +357,7 @@ void handleStage2(){
     if (controller.getFanState() && hasIntervalPassed(turn_on_pid_timer, 3000)) {
       pid_input = TA_F;
       // coef_output = Output;  // Transform the Output of the PID to the desired max value
-      coef_output = (coef_pid * Output) / 100;  // Transform the Output of the PID to the desired max value
+      coef_output = (coef_pid_fwd * Output) / 100;  // Transform the Output of the PID to the desired max value
 
       air_in_feed_PID.Compute();
       logger.println("Computing PID: " +String(coef_output));
@@ -406,6 +407,29 @@ void handleStage2(){
       publishStateChange(m_F1, true, "Stage 2 F1 Start published ");
     }
 
+    // Calculate the Setpoint every 3 seconds in Function of Ta with the formula : Setpoint = B - A*Ts
+    if (hasIntervalPassed(pid_computing_timer, 3000)) {
+      Setpoint = (-(room.A * (temp_data.avg_ts)) + room.B);  //use the average of the temperature over the x last minuites
+      pid_setpoint = float(Setpoint);
+
+      logger.println("New Setpoint: " +String(pid_setpoint));
+
+
+      publishStateChange(SETPOINT, pid_setpoint, "Setpoint published ");
+    }
+
+    // Activate the PID when F1 ON (reverse)
+    if (controller.getFanState() && hasIntervalPassed(turn_on_pid_timer, 3000)) {
+      pid_input = TA_F;
+      coef_output = (coef_pid_rev * Output) / 100;  // Transform the Output of the PID to the desired max value
+
+      air_in_feed_PID.Compute();
+      logger.println("Computing PID (reverse): " +String(coef_output));
+      
+      controller.writeAnalogOutput(AIR_PWM, coef_output);
+      publishPID();
+    }
+
     if (controller.getFanState() && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true)) stage_2.nextStep();
   }
 
@@ -419,6 +443,16 @@ void handleStage2(){
       logger.println("Stage 2 F1 Off");
 
       publishStateChange(m_F1, false, "Stage 2 F1 Stop published ");
+    }
+
+    // Ensure PID output is cleared when the fan stops in step 4
+    if (!controller.getFanState() && hasIntervalPassed(turn_off_pid_timer, 3000)) {
+      pid_input = 0;
+      Output = 0;
+      coef_output = 0;
+
+      controller.writeAnalogOutput(AIR_PWM, 0);
+      publishPID();
     }
 
     if (!controller.getFanState() && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true)) stage_2.setStep(1);
@@ -688,8 +722,20 @@ void callback(char *topic, byte *payload, unsigned int len) {
   }
 
   if (mqtt.isTopicEqual(topic, sub_coefPID)) {
-    coef_pid = mqtt.responseToInt(payload, len);
-    logger.print("coef PID : " + String(coef_pid));
+    const uint8_t value = mqtt.responseToInt(payload, len);
+    coef_pid_fwd = value;
+    coef_pid_rev = value;
+    logger.print("coef PID (legacy) : " + String(value));
+  }
+
+  if (mqtt.isTopicEqual(topic, sub_coefPIDFwd)) {
+    coef_pid_fwd = mqtt.responseToInt(payload, len);
+    logger.print("coef PID forward : " + String(coef_pid_fwd));
+  }
+
+  if (mqtt.isTopicEqual(topic, sub_coefPIDRev)) {
+    coef_pid_rev = mqtt.responseToInt(payload, len);
+    logger.print("coef PID reverse : " + String(coef_pid_rev));
   }
 
   // Target temperature Ts & Tc update
