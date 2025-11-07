@@ -337,20 +337,26 @@ void Controller::updateDefaultParameters(stage_parameters &stage1_params, stage_
 
   // Update the values
   doc["stage1"]["f1Ontime"] = stage1_params.fanOnTime;
+  doc["stage1"]["f1RevONTime"] = stage1_params.fanRevONTime;
   doc["stage1"]["f1Offtime"] = stage1_params.fanOffTime;
 
   doc["stage2"]["f1Ontime"] = stage2_params.fanOnTime;
+  doc["stage2"]["f1RevONTime"] = stage2_params.fanRevONTime;
   doc["stage2"]["f1Offtime"] = stage2_params.fanOffTime;
+
   doc["stage2"]["s1Ontime"] = stage2_params.sprinklerOnTime;
   doc["stage2"]["s1Offtime"] = stage2_params.sprinklerOffTime;
 
   doc["stage3"]["f1Ontime"] = stage3_params.fanOnTime;
+  doc["stage3"]["f1RevONTime"] = stage3_params.fanRevONTime;
   doc["stage3"]["f1Offtime"] = stage3_params.fanOffTime;
   doc["stage3"]["s1Ontime"] = stage3_params.sprinklerOnTime;
   doc["stage3"]["s1Offtime"] = stage3_params.sprinklerOffTime;
 
   doc["setPoint"]["A"] = room.A;
   doc["setPoint"]["B"] = room.B;
+  doc["setPoint"]["coef_pid_fwd"] = room.coef_pid_fwd;
+  doc["setPoint"]["coef_pid_rev"] = room.coef_pid_rev;
   
   doc["tset"]["tsSet"] = N_tset.ts;
   doc["tset"]["tcSet"] = N_tset.tc;
@@ -475,16 +481,15 @@ void Controller::setUpDefaultParameters(stage_parameters &stage1_params, stage_p
   stage3_params.sprinklerOnTime = doc["stage3"]["s1Ontime"];
   stage3_params.sprinklerOffTime = doc["stage3"]["s1Offtime"];
 
-  doc["coefs"]["coef_pid_fw"];
-  doc["coefs"]["coef_pid_rev"];
-
   if(stage1_params.sprinklerOffTime < MIN_OFFTIME_STAGE1 ) stage1_params.sprinklerOffTime = MIN_OFFTIME_STAGE1;
   if(stage2_params.sprinklerOffTime < MIN_OFFTIME_STAGE2 ) stage2_params.sprinklerOffTime = MIN_OFFTIME_STAGE2;
   if(stage3_params.sprinklerOffTime < MIN_OFFTIME_STAGE3 ) stage3_params.sprinklerOffTime  = MIN_OFFTIME_STAGE3;
   
 
   room.A = doc["setPoint"]["A"];
-  room.B = doc["setPoint"]["B"];; 
+  room.B = doc["setPoint"]["B"];
+  room.coef_pid_fwd = doc["setPoint"]["coef_pid_fwd"];
+  room.coef_pid_rev = doc["setPoint"]["coef_pid_rev"];
 
   N_tset.ts = doc["tset"]["tsSet"];
   N_tset.tc = doc["tset"]["tcSet"];

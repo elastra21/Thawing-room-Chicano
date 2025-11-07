@@ -63,6 +63,9 @@ typedef struct {
 typedef struct {
   float A;
   float B;
+  uint8_t coef_pid_fwd;
+  uint8_t coef_pid_rev;
+
 } room_parameters;
 
 // ==================== TEMPERATURE DATA ====================

@@ -33,8 +33,6 @@ bool ki_has_changed = true;
 bool kd_has_changed = true;
 
 double coef_output = 0;  // Output for the infeed (New Analog Output that will be sent to S1
-uint8_t coef_pid_fwd = 100;
-uint8_t coef_pid_rev = 100;
 uint8_t Converted_Output = 0;
 
 bool is_rts_ir = 0;
@@ -354,7 +352,7 @@ void handleStage2(){
     if (controller.getFanState() && hasIntervalPassed(timers.stage2.pid_turn_on, 3000)) {
       pid_input = TA_F;
       // coef_output = Output;  // Transform the Output of the PID to the desired max value
-      coef_output = (coef_pid_fwd * Output) / 100;  // Transform the Output of the PID to the desired max value
+      coef_output = (room.coef_pid_fwd * Output) / 100;  // Transform the Output of the PID to the desired max value
 
       air_in_feed_PID.Compute();
       char buffer[40];
@@ -422,7 +420,7 @@ void handleStage2(){
     // Activate the PID when F1 ON (reverse)
     if (controller.getFanState() && hasIntervalPassed(timers.stage2.pid_turn_on, 3000)) {
       pid_input = TA_F;
-      coef_output = (coef_pid_rev * Output) / 100;  // Transform the Output of the PID to the desired max value
+      coef_output = (room.coef_pid_rev * Output) / 100;  // Transform the Output of the PID to the desired max value
 
       air_in_feed_PID.Compute();
       char buffer[50];
@@ -774,24 +772,24 @@ void callback(char *topic, byte *payload, unsigned int len) {
 
   if (mqtt.isTopicEqual(topic, sub_coefPID)) {
     const uint8_t value = mqtt.responseToInt(payload, len);
-    coef_pid_fwd = value;
-    coef_pid_rev = value;
+    room.coef_pid_fwd = value;
+    room.coef_pid_rev = value;
     char buffer[40];
     sprintf(buffer, "coef PID (legacy) : %d", value);
     logger.print(buffer);
   }
 
   if (mqtt.isTopicEqual(topic, sub_coefPIDFwd)) {
-    coef_pid_fwd = mqtt.responseToInt(payload, len);
+    room.coef_pid_fwd = mqtt.responseToInt(payload, len);
     char buffer[40];
-    sprintf(buffer, "coef PID forward : %d", coef_pid_fwd);
+    sprintf(buffer, "coef PID forward : %d", room.coef_pid_fwd);
     logger.print(buffer);
   }
 
   if (mqtt.isTopicEqual(topic, sub_coefPIDRev)) {
-    coef_pid_rev = mqtt.responseToInt(payload, len);
+    room.coef_pid_rev = mqtt.responseToInt(payload, len);
     char buffer[40];
-    sprintf(buffer, "coef PID reverse : %d", coef_pid_rev);
+    sprintf(buffer, "coef PID reverse : %d", room.coef_pid_rev);
     logger.print(buffer);
   }
 
