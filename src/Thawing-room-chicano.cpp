@@ -246,7 +246,7 @@ void handleStage1(){
       publishStateChange(m_F1, true, "Stage 1 init M_F1 ON published ");
     }
 
-    else if (hasIntervalPassed(timers.stage1.fan, stage1_params.fanOffTime , true)) {
+    else if (hasIntervalPassed(timers.stage1.fan, stage1_params.fanOnTime , true)) {
       logger.print("STAGE #1, current step: ");
       stage_1.nextStep();
     }
@@ -264,7 +264,7 @@ void handleStage1(){
 
       publishStateChange(m_F1, false, "Stage 1 init M_F1 OFF published ");
     }
-    else if (hasIntervalPassed(timers.stage1.fan, stage1_params.fanOnTime, true)) {
+    else if (hasIntervalPassed(timers.stage1.fan, stage1_params.fanOffTime, true)) {
       logger.print("STAGE #1, current step: ");
       stage_1.nextStep();
     }
@@ -281,7 +281,7 @@ void handleStage1(){
       publishStateChange(m_F1, true, "Stage 1 init M_F1 ON published ");
     }
 
-    else if (hasIntervalPassed(timers.stage1.fan, stage1_params.fanOffTime , true)) {
+    else if (hasIntervalPassed(timers.stage1.fan, stage1_params.fanRevONTime , true)) {
       logger.print("STAGE #1, current step: ");
       stage_1.nextStep();
     }
@@ -298,7 +298,7 @@ void handleStage1(){
       publishStateChange(m_F1, false, "Stage 1 init M_F1 OFF published ");
     }
 
-    else if (hasIntervalPassed(timers.stage1.fan, stage1_params.fanOnTime, true)) stage_1.setStep(1);
+    else if (hasIntervalPassed(timers.stage1.fan, stage1_params.fanOffTime, true)) stage_1.setStep(1);
   }
 
   DateTime current_date = controller.getDateTime();
@@ -328,7 +328,7 @@ void handleStage2(){
   // Step #1
   else if (stage_2.getCurrentStep() == 1){
     if (!controller.getFanState()) {
-      hasIntervalPassed(timers.stage2.fan, stage2_params.fanOffTime, true);
+      hasIntervalPassed(timers.stage2.fan, stage2_params.fanOnTime, true);
       controller.turnOnFan(true);// Output of F1
       controller.writeDigitalOutput(AIR_DAMPER_IO, HIGH);  // Air damper
       logger.println("Stage 2 F1 On");
@@ -372,7 +372,7 @@ void handleStage2(){
   // Step #2
   else if (stage_2.getCurrentStep() == 2 ){
     if (controller.getFanState()) {
-      hasIntervalPassed(timers.stage2.fan, stage2_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage2.fan, stage2_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
       controller.writeDigitalOutput(AIR_DAMPER_IO, LOW);  // Air damper
@@ -398,7 +398,7 @@ void handleStage2(){
   //Step #3
   else if (stage_2.getCurrentStep() == 3){
      if (!controller.getFanState()){
-      hasIntervalPassed(timers.stage2.fan, stage2_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage2.fan, stage2_params.fanRevONTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(true, true);
       logger.println("Stage 2 F1 On");
@@ -433,13 +433,13 @@ void handleStage2(){
       publishPID();
     }
 
-    if (controller.getFanState() && hasIntervalPassed(timers.stage2.fan, stage2_params.fanOnTime, true)) stage_2.nextStep();
+    if (controller.getFanState() && hasIntervalPassed(timers.stage2.fan, stage2_params.fanRevONTime, true)) stage_2.nextStep();
   }
 
   //Step #4
   else if (stage_2.getCurrentStep() == 4){
     if (controller.getFanState()) {
-      hasIntervalPassed(timers.stage2.fan, stage2_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage2.fan, stage2_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
       // controller.writeDigitalOutput(AIR_DAMPER_IO, HIGH);  // Air damper
@@ -486,7 +486,7 @@ void handleStage3(){
   else if (stage_3.getCurrentStep() == 1){
 
     if (!controller.getFanState()) {
-      hasIntervalPassed(timers.stage3.fan, stage3_params.fanOffTime, true);
+      hasIntervalPassed(timers.stage3.fan, stage3_params.fanOnTime, true);
       controller.turnOnFan(true);// Output of F1
       logger.println("Stage 3 F1 On");
 
@@ -499,7 +499,7 @@ void handleStage3(){
   // Step #2
   else if (stage_3.getCurrentStep() == 2){
     if (controller.getFanState()) {
-      hasIntervalPassed(timers.stage3.fan, stage3_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage3.fan, stage3_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
       controller.writeDigitalOutput(AIR_DAMPER_IO, LOW);  // Air damper
@@ -515,7 +515,7 @@ void handleStage3(){
   else if (stage_3.getCurrentStep() == 3){
 
     if (!controller.getFanState()){
-      hasIntervalPassed(timers.stage3.fan, stage3_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage3.fan, stage3_params.fanRevONTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(true, true);// Output of F1
       logger.println("Stage 3 F1 On");
@@ -523,14 +523,14 @@ void handleStage3(){
       publishStateChange(m_F1, true, "Stage 3 F1 Start published ");
     }
 
-    if (controller.getFanState() && hasIntervalPassed(timers.stage3.fan, stage3_params.fanOnTime, true)) stage_3.nextStep();
+    if (controller.getFanState() && hasIntervalPassed(timers.stage3.fan, stage3_params.fanRevONTime, true)) stage_3.nextStep();
   }
 
   // Step #4
   else if (stage_3.getCurrentStep() == 4){
 
     if (controller.getFanState()) {
-      hasIntervalPassed(timers.stage3.fan, stage3_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage3.fan, stage3_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
       // controller.writeDigitalOutput(AIR_DAMPER_IO, HIGH);  // Air damper
