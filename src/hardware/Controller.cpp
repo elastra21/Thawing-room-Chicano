@@ -458,19 +458,25 @@ void Controller::setUpDefaultParameters(stage_parameters &stage1_params, stage_p
   }
 
   stage1_params.fanOnTime = doc["stage1"]["f1Ontime"];
+  stage1_params.fanRevONTime = doc["stage1"]["f1RevONtime"];
   stage1_params.fanOffTime = doc["stage1"]["f1Offtime"];
   stage1_params.sprinklerOnTime = doc["stage1"]["s1Ontime"];
   stage1_params.sprinklerOffTime = doc["stage1"]["s1Offtime"];
 
   stage2_params.fanOnTime = doc["stage2"]["f1Ontime"];
+  stage2_params.fanRevONTime = doc["stage2"]["f1RevONtime"];
   stage2_params.fanOffTime = doc["stage2"]["f1Offtime"];
   stage2_params.sprinklerOnTime = doc["stage2"]["s1Ontime"];
   stage2_params.sprinklerOffTime = doc["stage2"]["s1Offtime"];
 
   stage3_params.fanOnTime = doc["stage3"]["f1Ontime"];
+  stage3_params.fanRevONTime = doc["stage3"]["f1RevONtime"];
   stage3_params.fanOffTime = doc["stage3"]["f1Offtime"];
   stage3_params.sprinklerOnTime = doc["stage3"]["s1Ontime"];
   stage3_params.sprinklerOffTime = doc["stage3"]["s1Offtime"];
+
+  doc["coefs"]["coef_pid_fw"];
+  doc["coefs"]["coef_pid_rev"];
 
   if(stage1_params.sprinklerOffTime < MIN_OFFTIME_STAGE1 ) stage1_params.sprinklerOffTime = MIN_OFFTIME_STAGE1;
   if(stage2_params.sprinklerOffTime < MIN_OFFTIME_STAGE2 ) stage2_params.sprinklerOffTime = MIN_OFFTIME_STAGE2;

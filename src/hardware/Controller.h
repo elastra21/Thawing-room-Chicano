@@ -44,6 +44,7 @@
 
 typedef struct {
     float fanOnTime;
+    float fanRevONTime;
     float fanOffTime;
     float sprinklerOnTime;  // Optional, can be 0 or not used for Stage 1
     float sprinklerOffTime; // Optional, can be 0 or not used for Stage 1

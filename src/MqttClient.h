@@ -12,8 +12,6 @@
 
 #define main_topic          "mfp2/"
 
-const char mqnms[13] = "putoelquelee";
-
 //             subscribe topics    -------------------------------------------------------------------->
 #define sub_hours           main_topic "hours"
 #define sub_minutes         main_topic "minutes"
