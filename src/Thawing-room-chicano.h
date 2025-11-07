@@ -11,37 +11,9 @@
 #include "./hardware/Logger.h"
 #include "config.h"
 #include "./hardware/Controller.h"
+#include "types.h"
 
 //------------ structure definitions an flags -------------------------------------------------------->
-
-// temperature measures
-typedef struct { float ta; float ts; float tc; float ti; float avg_ts; float avg_tc; float avg_ta; } data_s;
-
-// Timer structure for organized timer management
-typedef struct {
-  struct {
-    uint32_t fan;
-    uint32_t sprinkler;
-  } stage1;
-  
-  struct {
-    uint32_t fan;
-    uint32_t sprinkler;
-    uint32_t pid_computing;
-    uint32_t pid_turn_on;
-    uint32_t pid_turn_off;
-    uint32_t pid_publish;
-  } stage2;
-  
-  struct {
-    uint32_t fan;
-    uint32_t sprinkler;
-  } stage3;
-  
-  uint32_t temp_acquisition;
-  uint32_t A_B_publish;
-} SystemTimers;
-
 
 const int stageLedPins[NUM_STATES] = {
     -1, // IDLE no tiene LED asociado
@@ -50,9 +22,6 @@ const int stageLedPins[NUM_STATES] = {
     STAGE_3_IO,
     -1  // ERROR no tiene LED asociado, o puedes asignar un pin si hay un LED para ERROR
 };
-
-enum SensorProbes{TA_TYPE, TS_TYPE, TC_TYPE};
-enum button_type{NONE, D_START, START, STOP};
 
 //---- Function declaration ----/////////////////////////////////////////////////////////////////////////////
 
