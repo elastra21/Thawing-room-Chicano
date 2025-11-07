@@ -488,38 +488,14 @@ void Controller::setUpDefaultParameters(stage_parameters &stage1_params, stage_p
 
   room.A = doc["setPoint"]["A"];
   room.B = doc["setPoint"]["B"];
-  room.coef_pid_fwd = doc["setPoint"]["coef_pid_fwd"];
-  room.coef_pid_rev = doc["setPoint"]["coef_pid_rev"];
+  room.coef_pid_fwd = doc["setPoint"]["coef_pid_fwd"] | 100;
+  room.coef_pid_rev = doc["setPoint"]["coef_pid_rev"] | 100;
 
   N_tset.ts = doc["tset"]["tsSet"];
   N_tset.tc = doc["tset"]["tcSet"];
 
   // // log all data
-  // DEBUG("Stage 1 parameters: ");
-  // DEBUG("Fan on time: " + String(stage1_params.fanOnTime));
-  // DEBUG("Fan off time: " + String(stage1_params.fanOffTime));
-  // DEBUG("Sprinkler on time: " + String(stage1_params.sprinklerOnTime));
-  // DEBUG("Sprinkler off time: " + String(stage1_params.sprinklerOffTime));
 
-  // DEBUG("Stage 2 parameters: ");
-  // DEBUG("Fan on time: " + String(stage2_params.fanOnTime));
-  // DEBUG("Fan off time: " + String(stage2_params.fanOffTime));
-  // DEBUG("Sprinkler on time: " + String(stage2_params.sprinklerOnTime));
-  // DEBUG("Sprinkler off time: " + String(stage2_params.sprinklerOffTime));
-
-  // DEBUG("Stage 3 parameters: ");
-  // DEBUG("Fan on time: " + String(stage3_params.fanOnTime));
-  // DEBUG("Fan off time: " + String(stage3_params.fanOffTime));
-  // DEBUG("Sprinkler on time: " + String(stage3_params.sprinklerOnTime));
-  // DEBUG("Sprinkler off time: " + String(stage3_params.sprinklerOffTime));
-
-  // DEBUG("Room parameters: ");
-  // DEBUG("A: " + String(room.A));
-  // DEBUG("B: " + String(room.B));
-
-  // DEBUG("Tset parameters: ");
-  // DEBUG("Ts: " + String(N_tset.ts));
-  // DEBUG("Tc: " + String(N_tset.tc));
 
 }
 
