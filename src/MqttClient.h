@@ -129,7 +129,7 @@ class MqttClient {
       ERROR_ON_SUBSCRIBE,
       NUM_ERRORS 
     };
-
+    
     const String errorMessages[NUM_ERRORS] = {ON_CONNECTION_ERR_TXT, ON_RECONNECT_ERR_TXT, ON_SUBSCRIBE_ERR_TXT};
 
     uint16_t mqtt_port;
