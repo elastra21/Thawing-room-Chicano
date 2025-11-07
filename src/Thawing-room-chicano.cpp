@@ -71,6 +71,8 @@ SensorBuffer sensorTs(BUFFER_SIZE);  // Crear una instancia para el sensor Ts
 SensorBuffer sensorTc(10);  // Crear otra instancia para el sensor Tc
 SensorBuffer sensorTa(10);  // Crear otra instancia para el sensor Ta
 
+SensorBuffer sensorTsPT100(10);  // Crear otra instancia para el sensor TsPT100
+
 // SystemState currentState = IDLE;
 StageState currentState = {IDLE, 0};
 
@@ -870,6 +872,8 @@ void getTempAvg() {
   sensorTc.addValue(TC_F);
   sensorTa.addValue(TA_F);
 
+  sensorTsPT100.addValue(controller.readTempFrom(TS_AI));
+
   // mqtt.publishData(AVG_TS_TOPIC, temp_data.avg_ts);
   // mqtt.publishData(AVG_TC_TOPIC, temp_data.avg_tc);
   // mqtt.publishData(AVG_TA_TOPIC, temp_data.avg_ta);
@@ -895,7 +899,7 @@ void publishTemperatures() {
   temp_data.avg_tc = sensorTc.getAverage();
   temp_data.avg_ta = sensorTa.getAverage();
 
-  const float ts_pt100 = controller.readTempFrom(TS_AI);
+  const float ts_pt100 = sensorTsPT100.getAverage();
   const float ts_ir_mlx = controller.getIRTemp();
 
   mqtt.publishData(TA_TOPIC, temp_data.ta);
