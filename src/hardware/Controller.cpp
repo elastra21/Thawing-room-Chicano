@@ -118,18 +118,32 @@ void Controller::setUpRTC() {
 
 void Controller::setUpIRTc() {
   DEBUG("Inicializando MLX90640...");
+  ir_sensor_ready = false;
 
-  while (!mlx.begin(MLX90640_I2CADDR_DEFAULT, &rtc_i2c)) {
-    DEBUG("¡Error al iniciar el sensor MLX90640!");
-    delay(1000);
+  const uint8_t max_attempts = 5;
+  for (uint8_t attempt = 1; attempt <= max_attempts; attempt++) {
+    if (mlx.begin(MLX90640_I2CADDR_DEFAULT, &rtc_i2c)) {
+      DEBUG("Sensor MLX90640 iniciado correctamente");
+      mlx.setRefreshRate(MLX90640_4_HZ);
+      ir_sensor_ready = true;
+      return;
+    }
+
+    char buffer[70];
+    snprintf(buffer, sizeof(buffer), "Error al iniciar MLX90640 (intento %u/%u)", attempt, max_attempts);
+    DEBUG(buffer);
+    delay(500);
   }
 
-  DEBUG("Sensor MLX90640 iniciado correctamente");
-  
-  mlx.setRefreshRate(MLX90640_4_HZ);
+  DEBUG("MLX90640 no disponible, se omitirán las lecturas IR");
+  ERROR(IR_NOT_FOUND);
 }
 
 float Controller::getIRTemp() {
+  if (!ir_sensor_ready) {
+    return -1;
+  }
+
   float pixelTemps[32 * 24]; // Array temporal para almacenar las temperaturas de todos los píxeles
   float bottomTemps[ARRAY_SIZE]; // Inicializa con valores infinitos
 
@@ -215,9 +229,15 @@ bool Controller::isTsContactLess() {
   return ir_ts;
 }
 
+bool Controller::hasIRSensor() const {
+  return ir_sensor_ready;
+}
+
 void Controller::setTsContactLess(bool value) {
   updateConfigJson("IR_TS", value);
   ir_ts = value;
+  if (ir_ts) setUpIRTc();
+  else ir_sensor_ready = false;
 }
 
 bool Controller::isLoraTc() {

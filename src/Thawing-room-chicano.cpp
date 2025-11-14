@@ -889,7 +889,8 @@ bool isValidTemperature(float temp, float minTemp, float maxTemp, const String& 
 void updateTemperature() {
   float ta_raw = controller.readTempFrom(TA_AI);
   float tc_raw = controller.readTempFrom(TC_AI);
-  float ts_raw = controller.isTsContactLess() ? controller.getIRTemp() : controller.readTempFrom(TS_AI);
+  const bool use_ir_ts = controller.isTsContactLess() && controller.hasIRSensor();
+  float ts_raw = use_ir_ts ? controller.getIRTemp() : controller.readTempFrom(TS_AI);
   
   
   TA = isValidTemperature(ta_raw, TA_MIN, TA_MAX, "TA") ? ta_raw : TA_DEF;
@@ -977,14 +978,16 @@ void publishTemperatures() {
   temp_data.avg_ta = sensorTa.getAverage();
 
   const float ts_pt100 = sensorTsPT100.getAverage();
-  // const float ts_ir_mlx = controller.getIRTemp();
 
   mqtt.publishData(TA_TOPIC, temp_data.ta);
   mqtt.publishData(TS_TOPIC, temp_data.ts);
   mqtt.publishData(TC_TOPIC, temp_data.tc);
   mqtt.publishData(TI_TOPIC, temp_data.ti);
   mqtt.publishData(TS_PT100_TOPIC, ts_pt100);
-  // mqtt.publishData(TS_IR_MLX_TOPIC, ts_ir_mlx);
+  if (controller.hasIRSensor()) {
+    const float ts_ir_mlx = controller.getIRTemp();
+    mqtt.publishData(TS_IR_MLX_TOPIC, ts_ir_mlx);
+  }
 
   mqtt.publishData(AVG_TA_TOPIC, temp_data.avg_ta);
   mqtt.publishData(AVG_TS_TOPIC, temp_data.avg_ts);
