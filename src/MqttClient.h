@@ -10,7 +10,7 @@
 #define MQTT_PASSWORD_SIZE 32
 #define PREFIX_SIZE 32
 
-#define main_topic            "cfpp3/"
+#define main_topic            "cfpp4/"
 
 // const char* subtopichugo  = prro"pendejo"; 
 // #define subtopic22       prefix"pendejo2"
@@ -23,12 +23,15 @@
 #define sub_month           main_topic "month"
 #define sub_f1_st1_ontime   main_topic "f1_st1_ontime"
 #define sub_f1_st1_offtime  main_topic "f1_st1_offtime"
+#define sub_f1_rev_st1_ontime  main_topic "f1_rev_st1_ontime"
 #define sub_f1_st2_ontime   main_topic "f1_st2_ontime"
 #define sub_f1_st2_offtime  main_topic "f1_st2_offtime"
+#define sub_f1_rev_st2_ontime  main_topic "f1_rev_st2_ontime"
 #define sub_s1_st2_ontime   main_topic "s1_st2_ontime"
 #define sub_s1_st2_offtime  main_topic "s1_st2_offtime"
 #define sub_f1_st3_ontime   main_topic "f1_st3_ontime"
 #define sub_f1_st3_offtime  main_topic "f1_st3_offtime"
+#define sub_f1_rev_st3_ontime  main_topic "f1_rev_st3_ontime"
 #define sub_s1_st3_ontime   main_topic "s1_st3_ontime"
 #define sub_s1_st3_offtime  main_topic "s1_st3_offtime"
 #define sub_A               main_topic "A"
@@ -53,7 +56,7 @@
 #define IS_TS_IR            main_topic "isTsIR"
 
 
-#define SUB_ARRAY_SIZE 34
+#define SUB_ARRAY_SIZE 37
 
 //------------ publish index    -------------------------------------------------------------------->
 #define m_F1                main_topic "M_F1"
@@ -150,12 +153,15 @@ class MqttClient {
       sub_month,
       sub_f1_st1_ontime,
       sub_f1_st1_offtime,
+      sub_f1_rev_st1_ontime,
       sub_f1_st2_ontime,
       sub_f1_st2_offtime,
+      sub_f1_rev_st2_ontime,
       sub_s1_st2_ontime,
       sub_s1_st2_offtime,
       sub_f1_st3_ontime,
       sub_f1_st3_offtime,
+      sub_f1_rev_st3_ontime,
       sub_s1_st3_ontime,
       sub_s1_st3_offtime,
       sub_A,

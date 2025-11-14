@@ -655,6 +655,14 @@ void callback(char *topic, byte *payload, unsigned int len) {
     update_default_parameters = true;
   }
 
+  if (mqtt.isTopicEqual(topic, sub_f1_rev_st1_ontime)) {
+    stage1_params.fanRevONTime = mqtt.responseToFloat(payload, len);
+    char buffer[60];
+    sprintf(buffer, "F1 Stage 1 reverse on time set to: %.1f MINS", stage1_params.fanRevONTime);
+    logger.println(buffer);
+    update_default_parameters = true;
+  }
+
   // F1 and S1 STAGE 2 on/off time
   if (mqtt.isTopicEqual(topic, sub_f1_st2_ontime)) {
     stage2_params.fanOnTime = mqtt.responseToFloat(payload, len);
@@ -668,6 +676,14 @@ void callback(char *topic, byte *payload, unsigned int len) {
     stage2_params.fanOffTime  = mqtt.responseToFloat(payload, len);
     char buffer[50];
     sprintf(buffer, "F1 Stage 2 off time set to: %.1f MINS", stage2_params.fanOffTime);
+    logger.println(buffer);
+    update_default_parameters = true;
+  }
+
+  if (mqtt.isTopicEqual(topic, sub_f1_rev_st2_ontime)) {
+    stage2_params.fanRevONTime = mqtt.responseToFloat(payload, len);
+    char buffer[60];
+    sprintf(buffer, "F1 Stage 2 reverse on time set to: %.1f MINS", stage2_params.fanRevONTime);
     logger.println(buffer);
     update_default_parameters = true;
   }
@@ -701,6 +717,14 @@ void callback(char *topic, byte *payload, unsigned int len) {
     stage3_params.fanOffTime = mqtt.responseToFloat(payload, len);
     char buffer[50];
     sprintf(buffer, "F1 Stage 3 off time set to: %.1f MINS", stage3_params.fanOffTime);
+    logger.println(buffer);
+    update_default_parameters = true;
+  }
+
+  if (mqtt.isTopicEqual(topic, sub_f1_rev_st3_ontime)) {
+    stage3_params.fanRevONTime = mqtt.responseToFloat(payload, len);
+    char buffer[60];
+    sprintf(buffer, "F1 Stage 3 reverse on time set to: %.1f MINS", stage3_params.fanRevONTime);
     logger.println(buffer);
     update_default_parameters = true;
   }
@@ -953,14 +977,14 @@ void publishTemperatures() {
   temp_data.avg_ta = sensorTa.getAverage();
 
   const float ts_pt100 = sensorTsPT100.getAverage();
-  const float ts_ir_mlx = controller.getIRTemp();
+  // const float ts_ir_mlx = controller.getIRTemp();
 
   mqtt.publishData(TA_TOPIC, temp_data.ta);
   mqtt.publishData(TS_TOPIC, temp_data.ts);
   mqtt.publishData(TC_TOPIC, temp_data.tc);
   mqtt.publishData(TI_TOPIC, temp_data.ti);
   mqtt.publishData(TS_PT100_TOPIC, ts_pt100);
-  mqtt.publishData(TS_IR_MLX_TOPIC, ts_ir_mlx);
+  // mqtt.publishData(TS_IR_MLX_TOPIC, ts_ir_mlx);
 
   mqtt.publishData(AVG_TA_TOPIC, temp_data.avg_ta);
   mqtt.publishData(AVG_TS_TOPIC, temp_data.avg_ts);
