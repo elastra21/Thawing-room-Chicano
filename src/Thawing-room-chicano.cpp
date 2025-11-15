@@ -794,14 +794,14 @@ void callback(char *topic, byte *payload, unsigned int len) {
     kp_has_changed = ki_has_changed = kd_has_changed = 0;
   }
 
-  if (mqtt.isTopicEqual(topic, sub_coefPID)) {
-    const uint8_t value = mqtt.responseToInt(payload, len);
-    room.coef_pid_fwd = value;
-    room.coef_pid_rev = value;
-    char buffer[40];
-    sprintf(buffer, "coef PID (legacy) : %d", value);
-    logger.print(buffer);
-  }
+  // if (mqtt.isTopicEqual(topic, sub_coefPID)) {
+  //   const uint8_t value = mqtt.responseToInt(payload, len);
+  //   room.coef_pid_fwd = value;
+  //   room.coef_pid_rev = value;
+  //   char buffer[40];
+  //   sprintf(buffer, "coef PID (legacy) : %d", value);
+  //   logger.print(buffer);
+  // }
 
   if (mqtt.isTopicEqual(topic, sub_coefPIDFwd)) {
     room.coef_pid_fwd = mqtt.responseToInt(payload, len);
