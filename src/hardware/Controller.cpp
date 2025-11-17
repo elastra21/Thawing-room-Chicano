@@ -119,6 +119,7 @@ void Controller::setUpRTC() {
 void Controller::setUpIRTc() {
   DEBUG("Inicializando MLX90640...");
   ir_sensor_ready = false;
+  ir_sensor_attempted = true;
 
   const uint8_t max_attempts = 5;
   for (uint8_t attempt = 1; attempt <= max_attempts; attempt++) {
@@ -229,15 +230,17 @@ bool Controller::isTsContactLess() {
   return ir_ts;
 }
 
-bool Controller::hasIRSensor() const {
+bool Controller::hasIRSensor() {
+  if (!ir_sensor_ready && !ir_sensor_attempted) {
+    setUpIRTc();
+  }
   return ir_sensor_ready;
 }
 
 void Controller::setTsContactLess(bool value) {
   updateConfigJson("IR_TS", value);
   ir_ts = value;
-  if (ir_ts) setUpIRTc();
-  else ir_sensor_ready = false;
+  if (ir_ts && !ir_sensor_ready) setUpIRTc();
 }
 
 bool Controller::isLoraTc() {

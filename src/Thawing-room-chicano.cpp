@@ -901,8 +901,8 @@ void updateTemperature() {
 }
 
 void sendTemperaturaAlert(float temp, String sensor){
-  const String msg = "{\"temp\":" + String(temp) + ", \"sensor\":" + sensor + "}";
-  mqtt.publishData(SPOILED_SENSOR, msg);
+  // const String msg = "{\"temp\":" + String(temp) + ", \"sensor\":" + sensor + "}";
+  // mqtt.publishData(SPOILED_SENSOR, msg);
 }
 
 void setStage(SystemState stage) {

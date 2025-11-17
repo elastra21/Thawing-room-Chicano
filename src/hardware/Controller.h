@@ -60,6 +60,7 @@ private:
     bool ir_ts = false;
     bool lora_tc = false;
     bool ir_sensor_ready = false;
+    bool ir_sensor_attempted = false;
     Preferences preferences;
     int8_t TIME_ZONE_OFFSET_HRS = 0;
 
@@ -138,7 +139,7 @@ public:
     //Logger
     void DEBUG(const char *message);
     void ERROR(ErrorType error);
-    bool hasIRSensor() const;
+    bool hasIRSensor();
     // void DEBUG(String message);
 
     template <typename T> 
