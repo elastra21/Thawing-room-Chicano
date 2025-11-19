@@ -55,6 +55,7 @@ void asyncLoopSprinkler(uint32_t &timer, uint32_t offTime, uint32_t onTime);
 void getTempAvg();
 void updateTemperature();
 bool handleInputs(button_type override = NONE);
+void setupMqttEvents(); // Setup event-driven MQTT handlers
 void callback(char *topic, byte *payload, unsigned int len); 
 bool hasIntervalPassed(uint32_t &previousMillis, uint32_t interval, bool to_min = false);
 bool isValidTemperature(float temp, float minTemp, float maxTemp, const String& sensorName);
