@@ -19,6 +19,7 @@
 #include "SensorBuffer.h"
 #include <Adafruit_MLX90640.h>
 #include <DallasTemperature.h>
+#include "types.h"
 
 #define TEMPERATURE_MIN  -50 // Minimum temperature value (in Celsius)
 #define TEMPERATURE_MAX  150
@@ -37,52 +38,11 @@
 #define NO_CONFIG_FILE_TXT "No config file found"
 #define NO_DEFAULT_PARAMS_TXT "No default parameters found"
 
-
-
 // #define TIME_ZONE_OFFSET_HRS            (-7)  /* Ensenada, México */
 // #define TIME_ZONE_OFFSET_HRS            (+8)   /* Taiping, Malaysia */
 
-typedef struct {
-    float fanOnTime;
-    float fanOffTime;
-    float sprinklerOnTime;  // Optional, can be 0 or not used for Stage 1
-    float sprinklerOffTime; // Optional, can be 0 or not used for Stage 1
-} stage_parameters;
-
-enum SystemState {
-    IDLE,
-    STAGE1,
-    STAGE2,
-    STAGE3,
-    ERROR,
-    NUM_STATES
-};
-
-struct StageState {
-    SystemState stage;
-    uint8_t step;
-};
-
-// A and B variables
-typedef struct { float A; float B; }                  room_parameters;
-
-// Ts and Tc target value
-typedef struct { float ts; float tc; }        data_tset;
-
 class Controller {
 private:
-    enum ErrorType {
-        I2C_ERROR,
-        RTC_NOT_FOND,
-        IR_NOT_FOUND,
-        TC_OUT_OF_RANGE,
-        TS_OUT_OF_RANGE,
-        TA_OUT_OF_RANGE,
-        NO_CONFIG_FILE,
-        NO_DEFAULT_PARAMS,
-        NUM_ERRORS
-    };
-
     const char* ERROR_MESSAGES[NUM_ERRORS] = {
         I2C_ERR_TXT,
         RTC_ERR_TXT,
@@ -99,6 +59,8 @@ private:
     int ARRAY_SIZE = 7;
     bool ir_ts = false;
     bool lora_tc = false;
+    bool ir_sensor_ready = false;
+    bool ir_sensor_attempted = false;
     Preferences preferences;
     int8_t TIME_ZONE_OFFSET_HRS = 0;
 
@@ -177,6 +139,7 @@ public:
     //Logger
     void DEBUG(const char *message);
     void ERROR(ErrorType error);
+    bool hasIRSensor();
     // void DEBUG(String message);
 
     template <typename T> 

@@ -10,9 +10,11 @@
 #define MQTT_PASSWORD_SIZE 32
 #define PREFIX_SIZE 32
 
-#define main_topic          "mfp2/"
+#define main_topic            "cfpp4/"
 
-const char mqnms[13] = "putoelquelee";
+// const char* subtopichugo  = prro"pendejo"; 
+// #define subtopic22       prefix"pendejo2"
+
 
 //             subscribe topics    -------------------------------------------------------------------->
 #define sub_hours           main_topic "hours"
@@ -21,12 +23,15 @@ const char mqnms[13] = "putoelquelee";
 #define sub_month           main_topic "month"
 #define sub_f1_st1_ontime   main_topic "f1_st1_ontime"
 #define sub_f1_st1_offtime  main_topic "f1_st1_offtime"
+#define sub_f1_rev_st1_ontime  main_topic "f1_rev_st1_ontime"
 #define sub_f1_st2_ontime   main_topic "f1_st2_ontime"
 #define sub_f1_st2_offtime  main_topic "f1_st2_offtime"
+#define sub_f1_rev_st2_ontime  main_topic "f1_rev_st2_ontime"
 #define sub_s1_st2_ontime   main_topic "s1_st2_ontime"
 #define sub_s1_st2_offtime  main_topic "s1_st2_offtime"
 #define sub_f1_st3_ontime   main_topic "f1_st3_ontime"
 #define sub_f1_st3_offtime  main_topic "f1_st3_offtime"
+#define sub_f1_rev_st3_ontime  main_topic "f1_rev_st3_ontime"
 #define sub_s1_st3_ontime   main_topic "s1_st3_ontime"
 #define sub_s1_st3_offtime  main_topic "s1_st3_offtime"
 #define sub_A               main_topic "A"
@@ -44,12 +49,14 @@ const char mqnms[13] = "putoelquelee";
 #define sub_tsAvgSpan       main_topic "TsAvgFifoSpan"  // in minutes the span of the fifo for Ts calculation
 #define sub_chooseTs        main_topic "chooseTs"
 #define sub_coefPID         main_topic "coefPID"
+#define sub_coefPIDFwd      main_topic "coefPIDFwd"
+#define sub_coefPIDRev      main_topic "coefPIDRev"
 #define LORA_TC             main_topic "lora_TC"
 #define IS_TC_LORA          main_topic "isTcLora"
 #define IS_TS_IR            main_topic "isTsIR"
 
 
-#define SUB_ARRAY_SIZE 32
+#define SUB_ARRAY_SIZE 37
 
 //------------ publish index    -------------------------------------------------------------------->
 #define m_F1                main_topic "M_F1"
@@ -64,6 +71,8 @@ const char mqnms[13] = "putoelquelee";
 #define TS_TOPIC            main_topic "Ts"
 #define TC_TOPIC            main_topic "Tc"
 #define TI_TOPIC            main_topic "Ti"
+#define TS_PT100_TOPIC      main_topic "Ts_PT100"
+#define TS_IR_MLX_TOPIC     main_topic "Ts_IR_MLX"
 #define PID_OUTPUT          main_topic "PID_output"
 #define SETPOINT            main_topic "setpoint"
 #define ACK_F1_ST1_ONTIME   main_topic "ack_f1_st1_ontime"
@@ -144,12 +153,15 @@ class MqttClient {
       sub_month,
       sub_f1_st1_ontime,
       sub_f1_st1_offtime,
+      sub_f1_rev_st1_ontime,
       sub_f1_st2_ontime,
       sub_f1_st2_offtime,
+      sub_f1_rev_st2_ontime,
       sub_s1_st2_ontime,
       sub_s1_st2_offtime,
       sub_f1_st3_ontime,
       sub_f1_st3_offtime,
+      sub_f1_rev_st3_ontime,
       sub_s1_st3_ontime,
       sub_s1_st3_offtime,
       sub_A,
@@ -167,6 +179,8 @@ class MqttClient {
       sub_tsAvgSpan,
       sub_chooseTs,
       sub_coefPID,
+      sub_coefPIDFwd,
+      sub_coefPIDRev,
       LORA_TC,
       IS_TC_LORA,
       IS_TS_IR,

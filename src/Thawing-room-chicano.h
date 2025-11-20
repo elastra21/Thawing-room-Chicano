@@ -11,12 +11,9 @@
 #include "./hardware/Logger.h"
 #include "config.h"
 #include "./hardware/Controller.h"
+#include "types.h"
 
 //------------ structure definitions an flags -------------------------------------------------------->
-
-// temperature measures
-typedef struct { float ta; float ts; float tc; float ti; float avg_ts; float avg_tc; float avg_ta; } data_s;
-
 
 const int stageLedPins[NUM_STATES] = {
     -1, // IDLE no tiene LED asociado
@@ -25,9 +22,6 @@ const int stageLedPins[NUM_STATES] = {
     STAGE_3_IO,
     -1  // ERROR no tiene LED asociado, o puedes asignar un pin si hay un LED para ERROR
 };
-
-enum SensorProbes{TA_TYPE, TS_TYPE, TC_TYPE};
-enum button_type{NONE, D_START, START, STOP};
 
 //---- Function declaration ----/////////////////////////////////////////////////////////////////////////////
 
@@ -78,16 +72,16 @@ void turn_off_flush_routine();
 
 // ---- Probes min and max values ----//////////////////////////////////////////////////////////////////////// 
 
-#define TA_MIN -5
-#define TA_MAX 25
+#define TA_MIN -9999
+#define TA_MAX 9999
 #define TA_DEF 15 
 
-#define TS_MIN -20
-#define TS_MAX 10
+#define TS_MIN -9999
+#define TS_MAX 9999
 #define TS_DEF 5
 
-#define TC_MIN -20
-#define TC_MAX 5
+#define TC_MIN -9999
+#define TC_MAX 9999
 #define TC_DEF -1
 
 

@@ -33,7 +33,6 @@ bool ki_has_changed = true;
 bool kd_has_changed = true;
 
 double coef_output = 0;  // Output for the infeed (New Analog Output that will be sent to S1
-uint8_t coef_pid = 100;
 uint8_t Converted_Output = 0;
 
 bool is_rts_ir = 0;
@@ -45,19 +44,7 @@ uint8_t stage2_day = 0;
 uint8_t stage2_month = 0;
 
 // ########################### Timers ##########################
-uint32_t fan_1_timer = 0UL;               // fan F1 timing
-uint32_t pid_computing_timer = 0UL;    // PID computing timing
-uint32_t fan_1_stg_2_timmer = 0UL;        // F1 stage 2 timing
-uint32_t fan_2_stg_2_timmer = 0UL;        // F1 stage 2 timing
-uint32_t fan_1_stg_3_timer = 0UL;         // F1 stage 3 timing
-uint32_t sprinkler_1_stg_1_timer = 0UL;         // S1 stage 2 timing
-uint32_t sprinkler_1_stg_2_timer = 0UL;         // S1 stage 2 timing
-uint32_t sprinkler_1_stg_3_timer = 0UL;         // S1 stage 3 timing
-uint32_t get_temp_timer = 0UL;         // temperature acquisition
-uint32_t stg_2_pid_timer = 0UL;        // stage 2 PID
-uint32_t turn_on_pid_timer = 0UL;      // stage 2 PID ON
-uint32_t turn_off_pid_timer = 0UL;     // stage 2 PID OFF
-uint32_t A_B_timer = 0UL;              // Stage ON/OFF and A&B PUBLISH
+SystemTimers timers = {0};  // Consolidated timer structure
 
 // ######################## Temperature ########################
 float TA = 0, TA_F = 0;  //Ta
@@ -69,6 +56,8 @@ float TI = 0, TI_F = 0;  //Ti optional
 SensorBuffer sensorTs(BUFFER_SIZE);  // Crear una instancia para el sensor Ts
 SensorBuffer sensorTc(10);  // Crear otra instancia para el sensor Tc
 SensorBuffer sensorTa(10);  // Crear otra instancia para el sensor Ta
+
+SensorBuffer sensorTsPT100(10);  // Crear otra instancia para el sensor TsPT100
 
 // SystemState currentState = IDLE;
 StageState currentState = {IDLE, 0};
@@ -88,8 +77,9 @@ PID air_in_feed_PID(&pid_input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);  // DIR
 
 void printStackUsage() {
   UBaseType_t highWaterMark = uxTaskGetStackHighWaterMark(NULL);
-  logger.print("Stack high water mark: ");
-  logger.println(String(highWaterMark));
+  char buffer[50];
+  sprintf(buffer, "Stack high water mark: %lu", (unsigned long)highWaterMark);
+  logger.println(buffer);
 }
 
 void backgroundTasks(void* pvParameters) {
@@ -143,10 +133,14 @@ void setup() {
   }
 
   DateTime current_date = controller.getDateTime();
-  logger.println("Current date: " + String(current_date.hour()) + ":" + String(current_date.minute()) + " " + String(current_date.day()) + "/" + String(current_date.month()));
+  char dateBuffer[60];
+  sprintf(dateBuffer, "Current date: %d:%d %d/%d", current_date.hour(), current_date.minute(), current_date.day(), current_date.month());
+  logger.println(dateBuffer);
 
   StageState last_state = controller.getLastState();
-  logger.println("Last state: " + String(last_state.stage) + " " + String(last_state.step));
+  char stateBuffer[50];
+  sprintf(stateBuffer, "Last state: %d %d", last_state.stage, last_state.step);
+  logger.println(stateBuffer);
   if (last_state.stage != IDLE) currentState = last_state;
 
   mqtt.setCallback(callback);
@@ -155,7 +149,7 @@ void setup() {
 
   xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 12000, NULL, 1, &communicationTask, 0);
 
-  logger.println("===========> Reboted!! <===========");
+  logger.println(F("===========> Reboted!! <==========="));
 
   //Turn the PID on
   air_in_feed_PID.SetMode(AUTOMATIC);
@@ -230,7 +224,7 @@ void handleStage(){
 }
 
 void handleStage1(){
-  asyncLoopSprinkler(sprinkler_1_stg_1_timer, stage1_params.sprinklerOffTime, stage1_params.sprinklerOnTime);
+  asyncLoopSprinkler(timers.stage1.sprinkler, stage1_params.sprinklerOffTime, stage1_params.sprinklerOnTime);
 
   // Init stage 1
   if (stage_1.getCurrentStep() == 0) {
@@ -242,15 +236,15 @@ void handleStage1(){
   // Step #1
   else if (stage_1.getCurrentStep() == 1){
     if (!controller.getFanState()){
-      hasIntervalPassed(fan_1_timer, stage1_params.fanOnTime, true); 
+      hasIntervalPassed(timers.stage1.fan, stage1_params.fanOnTime, true); 
 
       controller.turnOnFan(true);                                                                                     // Turn ON F1
-      logger.println("Stage 1 F1 On");
+      logger.println(F("Stage 1 F1 On"));
 
       publishStateChange(m_F1, true, "Stage 1 init M_F1 ON published ");
     }
 
-    else if (hasIntervalPassed(fan_1_timer, stage1_params.fanOffTime , true)) {
+    else if (hasIntervalPassed(timers.stage1.fan, stage1_params.fanOnTime , true)) {
       logger.print("STAGE #1, current step: ");
       stage_1.nextStep();
     }
@@ -261,14 +255,14 @@ void handleStage1(){
   else if (stage_1.getCurrentStep() == 2 ){
     // Turn OFF F1 when the time set in the configuration is over
     if (controller.getFanState()) {
-      hasIntervalPassed(fan_1_timer, stage1_params.fanOffTime , true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage1.fan, stage1_params.fanOffTime , true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
       logger.println("Stage 1 F1 Off");
 
       publishStateChange(m_F1, false, "Stage 1 init M_F1 OFF published ");
     }
-    else if (hasIntervalPassed(fan_1_timer, stage1_params.fanOnTime, true)) {
+    else if (hasIntervalPassed(timers.stage1.fan, stage1_params.fanOffTime, true)) {
       logger.print("STAGE #1, current step: ");
       stage_1.nextStep();
     }
@@ -277,7 +271,7 @@ void handleStage1(){
   // Step #3
   else if (stage_1.getCurrentStep() == 3){
     if (!controller.getFanState()){
-      hasIntervalPassed(fan_1_timer, stage1_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage1.fan, stage1_params.fanRevONTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(true, true); 
       logger.println("Stage 1 F1 On");
@@ -285,7 +279,7 @@ void handleStage1(){
       publishStateChange(m_F1, true, "Stage 1 init M_F1 ON published ");
     }
 
-    else if (hasIntervalPassed(fan_1_timer, stage1_params.fanOffTime , true)) {
+    else if (hasIntervalPassed(timers.stage1.fan, stage1_params.fanRevONTime , true)) {
       logger.print("STAGE #1, current step: ");
       stage_1.nextStep();
     }
@@ -294,7 +288,7 @@ void handleStage1(){
   // Step #4
   else if (stage_1.getCurrentStep() == 4){
     if (controller.getFanState()) {
-      hasIntervalPassed(fan_1_timer, stage1_params.fanOffTime , true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage1.fan, stage1_params.fanOffTime , true); // In case that the time is over or that the stage and step are not updated
       
       controller.turnOnFan(false);
       logger.println("Stage 1 F1 Off");
@@ -302,7 +296,7 @@ void handleStage1(){
       publishStateChange(m_F1, false, "Stage 1 init M_F1 OFF published ");
     }
 
-    else if (hasIntervalPassed(fan_1_timer, stage1_params.fanOnTime, true)) stage_1.setStep(1);
+    else if (hasIntervalPassed(timers.stage1.fan, stage1_params.fanOffTime, true)) stage_1.setStep(1);
   }
 
   DateTime current_date = controller.getDateTime();
@@ -319,7 +313,7 @@ void handleStage1(){
 
 void handleStage2(){
   // Loop of async process
-  asyncLoopSprinkler(sprinkler_1_stg_2_timer, stage2_params.sprinklerOffTime, stage2_params.sprinklerOnTime);
+  asyncLoopSprinkler(timers.stage2.sprinkler, stage2_params.sprinklerOffTime, stage2_params.sprinklerOnTime);
 
   // Init stage 2
   if (stage_2.getCurrentStep() == 0) {
@@ -332,7 +326,7 @@ void handleStage2(){
   // Step #1
   else if (stage_2.getCurrentStep() == 1){
     if (!controller.getFanState()) {
-      hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true);
+      hasIntervalPassed(timers.stage2.fan, stage2_params.fanOnTime, true);
       controller.turnOnFan(true);// Output of F1
       controller.writeDigitalOutput(AIR_DAMPER_IO, HIGH);  // Air damper
       logger.println("Stage 2 F1 On");
@@ -341,38 +335,42 @@ void handleStage2(){
     }
 
 
-    // Calculate the Setpoint every 3 seconds in Function of Ta with the formula : Setpoint = A*(B-Ta)
-    if (hasIntervalPassed(pid_computing_timer, 3000)) {
+    // Calculate the Setpoint every 3 seconds in Function of Ta with the formula : Setpoint = B - A*Ts
+    if (hasIntervalPassed(timers.stage2.pid_computing, 3000)) {
       Setpoint = (-(room.A * (temp_data.avg_ts)) + room.B);  //use the average of the temperature over the x last minuites
       pid_setpoint = float(Setpoint);
 
-      logger.println("New Setpoint: " +String(pid_setpoint));
+      char buffer[40];
+      sprintf(buffer, "New Setpoint: %.2f", pid_setpoint);
+      logger.println(buffer);
 
 
       publishStateChange(SETPOINT, pid_setpoint, "Setpoint published ");
     }
 
     // Activate the PID when F1 ON
-    if (controller.getFanState() && hasIntervalPassed(turn_on_pid_timer, 3000)) {
+    if (controller.getFanState() && hasIntervalPassed(timers.stage2.pid_turn_on, 3000)) {
       pid_input = TA_F;
       // coef_output = Output;  // Transform the Output of the PID to the desired max value
-      coef_output = (coef_pid * Output) / 100;  // Transform the Output of the PID to the desired max value
+      coef_output = (room.coef_pid_fwd * Output) / 100;  // Transform the Output of the PID to the desired max value
 
       air_in_feed_PID.Compute();
-      logger.println("Computing PID: " +String(coef_output));
+      char buffer[40];
+      sprintf(buffer, "Computing PID: %.2f", coef_output);
+      logger.println(buffer);
       
       controller.writeAnalogOutput(AIR_PWM, coef_output);
       publishPID();
     }
 
     // Turn OFF F1 when time is over
-    if (controller.getFanState() && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true)) stage_2.nextStep();
+    if (controller.getFanState() && hasIntervalPassed(timers.stage2.fan, stage2_params.fanOnTime, true)) stage_2.nextStep();
   }
 
   // Step #2
   else if (stage_2.getCurrentStep() == 2 ){
     if (controller.getFanState()) {
-      hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage2.fan, stage2_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
       controller.writeDigitalOutput(AIR_DAMPER_IO, LOW);  // Air damper
@@ -382,7 +380,7 @@ void handleStage2(){
     }
 
     // Put the PID at 0 when F1 OFF
-    if (!controller.getFanState() && hasIntervalPassed(turn_off_pid_timer, 3000)) {
+    if (!controller.getFanState() && hasIntervalPassed(timers.stage2.pid_turn_off, 3000)) {
       //Setpoint = 0;
       pid_input = 0;
       Output = 0;
@@ -392,13 +390,13 @@ void handleStage2(){
       publishPID();
     }
 
-    if (!controller.getFanState() && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true)) stage_2.nextStep();
+    if (!controller.getFanState() && hasIntervalPassed(timers.stage2.fan, stage2_params.fanOffTime, true)) stage_2.nextStep();
   }
 
   //Step #3
   else if (stage_2.getCurrentStep() == 3){
      if (!controller.getFanState()){
-      hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage2.fan, stage2_params.fanRevONTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(true, true);
       logger.println("Stage 2 F1 On");
@@ -406,13 +404,40 @@ void handleStage2(){
       publishStateChange(m_F1, true, "Stage 2 F1 Start published ");
     }
 
-    if (controller.getFanState() && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true)) stage_2.nextStep();
+    // Calculate the Setpoint every 3 seconds in Function of Ta with the formula : Setpoint = B - A*Ts
+    if (hasIntervalPassed(timers.stage2.pid_computing, 3000)) {
+      Setpoint = (-(room.A * (temp_data.avg_ts)) + room.B);  //use the average of the temperature over the x last minuites
+      pid_setpoint = float(Setpoint);
+
+      char buffer[40];
+      sprintf(buffer, "New Setpoint: %.2f", pid_setpoint);
+      logger.println(buffer);
+
+
+      publishStateChange(SETPOINT, pid_setpoint, "Setpoint published ");
+    }
+
+    // Activate the PID when F1 ON (reverse)
+    if (controller.getFanState() && hasIntervalPassed(timers.stage2.pid_turn_on, 3000)) {
+      pid_input = TA_F;
+      coef_output = (room.coef_pid_rev * Output) / 100;  // Transform the Output of the PID to the desired max value
+
+      air_in_feed_PID.Compute();
+      char buffer[50];
+      sprintf(buffer, "Computing PID (reverse): %.2f", coef_output);
+      logger.println(buffer);
+      
+      controller.writeAnalogOutput(AIR_PWM, coef_output);
+      publishPID();
+    }
+
+    if (controller.getFanState() && hasIntervalPassed(timers.stage2.fan, stage2_params.fanRevONTime, true)) stage_2.nextStep();
   }
 
   //Step #4
   else if (stage_2.getCurrentStep() == 4){
     if (controller.getFanState()) {
-      hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage2.fan, stage2_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
       // controller.writeDigitalOutput(AIR_DAMPER_IO, HIGH);  // Air damper
@@ -421,7 +446,17 @@ void handleStage2(){
       publishStateChange(m_F1, false, "Stage 2 F1 Stop published ");
     }
 
-    if (!controller.getFanState() && hasIntervalPassed(fan_1_stg_2_timmer, stage2_params.fanOffTime, true)) stage_2.setStep(1);
+    // Ensure PID output is cleared when the fan stops in step 4
+    if (!controller.getFanState() && hasIntervalPassed(timers.stage2.pid_turn_off, 3000)) {
+      pid_input = 0;
+      Output = 0;
+      coef_output = 0;
+
+      controller.writeAnalogOutput(AIR_PWM, 0);
+      publishPID();
+    }
+
+    if (!controller.getFanState() && hasIntervalPassed(timers.stage2.fan, stage2_params.fanOffTime, true)) stage_2.setStep(1);
   }
 
   bool isReadyForStage3 = TS_F >= temp_set.ts && TC_F >= temp_set.tc;
@@ -435,7 +470,7 @@ void handleStage2(){
 
 void handleStage3(){
   // Loop of async process
-  asyncLoopSprinkler(sprinkler_1_stg_3_timer, stage3_params.sprinklerOffTime, stage3_params.sprinklerOnTime);
+  asyncLoopSprinkler(timers.stage3.sprinkler, stage3_params.sprinklerOffTime, stage3_params.sprinklerOnTime);
 
   // Init stage 3
   if (stage_3.getCurrentStep() == 0) {
@@ -449,20 +484,20 @@ void handleStage3(){
   else if (stage_3.getCurrentStep() == 1){
 
     if (!controller.getFanState()) {
-      hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOffTime, true);
+      hasIntervalPassed(timers.stage3.fan, stage3_params.fanOnTime, true);
       controller.turnOnFan(true);// Output of F1
       logger.println("Stage 3 F1 On");
 
       publishStateChange(m_F1, true, "Stage 3 F1 Start published ");
     }
 
-    if(controller.getFanState() && hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOnTime, true)) stage_3.nextStep();
+    if(controller.getFanState() && hasIntervalPassed(timers.stage3.fan, stage3_params.fanOnTime, true)) stage_3.nextStep();
   }
 
   // Step #2
   else if (stage_3.getCurrentStep() == 2){
     if (controller.getFanState()) {
-      hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage3.fan, stage3_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
       controller.writeDigitalOutput(AIR_DAMPER_IO, LOW);  // Air damper
@@ -471,14 +506,14 @@ void handleStage3(){
       publishStateChange(m_F1, false, "Stage 3 F1 Stop published ");
     }
 
-    if (!controller.getFanState() && hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOffTime, true)) stage_3.nextStep();
+    if (!controller.getFanState() && hasIntervalPassed(timers.stage3.fan, stage3_params.fanOffTime, true)) stage_3.nextStep();
   }
 
   // Step #3
   else if (stage_3.getCurrentStep() == 3){
 
     if (!controller.getFanState()){
-      hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage3.fan, stage3_params.fanRevONTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(true, true);// Output of F1
       logger.println("Stage 3 F1 On");
@@ -486,14 +521,14 @@ void handleStage3(){
       publishStateChange(m_F1, true, "Stage 3 F1 Start published ");
     }
 
-    if (controller.getFanState() && hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOnTime, true)) stage_3.nextStep();
+    if (controller.getFanState() && hasIntervalPassed(timers.stage3.fan, stage3_params.fanRevONTime, true)) stage_3.nextStep();
   }
 
   // Step #4
   else if (stage_3.getCurrentStep() == 4){
 
     if (controller.getFanState()) {
-      hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOnTime, true); // In case that the time is over or that the stage and step are not updated
+      hasIntervalPassed(timers.stage3.fan, stage3_params.fanOffTime, true); // In case that the time is over or that the stage and step are not updated
 
       controller.turnOnFan(false);
       // controller.writeDigitalOutput(AIR_DAMPER_IO, HIGH);  // Air damper
@@ -502,7 +537,7 @@ void handleStage3(){
       publishStateChange(m_F1, false, "Stage 3 F1 Stop published ");
     }
 
-    if (!controller.getFanState() && hasIntervalPassed(fan_1_stg_3_timer, stage3_params.fanOffTime, true)) stage_3.setStep(1);
+    if (!controller.getFanState() && hasIntervalPassed(timers.stage3.fan, stage3_params.fanOffTime, true)) stage_3.setStep(1);
   }
 
   bool finishedStage3 = false;
@@ -519,7 +554,9 @@ void idle(){
 
 //// fct Callback ==> RECEIVE MQTT MESSAGES ////////////////////////////////////////////////////////////////////
 void callback(char *topic, byte *payload, unsigned int len) {
-  logger.println("Message arrived [" + String(topic) + "]" );
+  char buffer[80];
+  sprintf(buffer, "Message arrived [%s]", topic);
+  logger.println(buffer);
 
    // STOP
   if (mqtt.isTopicEqual(topic, sub_stop) ) {
@@ -527,13 +564,15 @@ void callback(char *topic, byte *payload, unsigned int len) {
     if (!value) return;
 
     handleInputs(STOP);
-    logger.println("stop BUTTON PRESSED ON NODE RED" );
+    logger.println(F("stop BUTTON PRESSED ON NODE RED"));
   }
 
   // Choose TS
   if (mqtt.isTopicEqual(topic, sub_chooseTs)) {
     is_rts_ir = mqtt.responseToInt(payload, len);
-    logger.println("Ts is now IR" + String(is_rts_ir));
+    char buf[30];
+    sprintf(buf, "Ts is now IR: %d", is_rts_ir);
+    logger.println(buf);
   }
 
   // LoRaTc
@@ -543,20 +582,26 @@ void callback(char *topic, byte *payload, unsigned int len) {
     const float tc_raw = mqtt.responseToFloat(payload, len);
     TC = isValidTemperature(tc_raw, TC_MIN, TC_MAX, "TC") ? tc_raw : TC_DEF;
 
-    logger.println(String(TC));
+    char buf[20];
+    sprintf(buf, "%.2f", TC);
+    logger.println(buf);
   }
 
   if (mqtt.isTopicEqual(topic, IS_TC_LORA)) {
     controller.setLoraTc(mqtt.responseToInt(payload, len));
     
-    logger.println("Lora TC is now: " + String(controller.isLoraTc()));
+    char buf[30];
+    sprintf(buf, "Lora TC is now: %d", controller.isLoraTc());
+    logger.println(buf);
   }
 
   // IR_TS
   if (mqtt.isTopicEqual(topic, IS_TS_IR)) {
     controller.setTsContactLess(mqtt.responseToInt(payload, len));
 
-    logger.println("Ts is now: " + String(controller.isTsContactLess()));
+    char buf[30];
+    sprintf(buf, "Ts is now: %d", controller.isTsContactLess());
+    logger.println(buf);
   }
   
 
@@ -565,22 +610,30 @@ void callback(char *topic, byte *payload, unsigned int len) {
       // Delayed start timing
   if (mqtt.isTopicEqual(topic, sub_hours)) {
     stage2_hour = mqtt.responseToFloat(payload, len);
-    logger.println("Stage 2 Hours set to: " + String(stage2_minute));
+    char buffer[40];
+    sprintf(buffer, "Stage 2 Hours set to: %d", stage2_hour);
+    logger.println(buffer);
   }
 
   if (mqtt.isTopicEqual(topic, sub_minutes)) {
     stage2_minute = mqtt.responseToFloat(payload, len);
-    logger.println("Stage 2 Minutes set to: " + String(stage2_minute));
+    char buffer[40];
+    sprintf(buffer, "Stage 2 Minutes set to: %d", stage2_minute);
+    logger.println(buffer);
   }
 
   if (mqtt.isTopicEqual(topic, sub_day)) {
     stage2_day = mqtt.responseToFloat(payload, len);
-    logger.println("Stage 2 Day set to: " + String(stage2_day));
+    char buffer[40];
+    sprintf(buffer, "Stage 2 Day set to: %d", stage2_day);
+    logger.println(buffer);
   }
 
   if (mqtt.isTopicEqual(topic, sub_month)) {
     stage2_month = mqtt.responseToFloat(payload, len);
-    logger.println("Stage 2 Month set to: " + String(stage2_month));
+    char buffer[40];
+    sprintf(buffer, "Stage 2 Month set to: %d", stage2_month);
+    logger.println(buffer);
   }
 
   bool update_default_parameters = false;
@@ -588,63 +641,107 @@ void callback(char *topic, byte *payload, unsigned int len) {
   //F1 stg1 on/off time
   if (mqtt.isTopicEqual(topic, sub_f1_st1_ontime)) {
     stage1_params.fanOnTime  = mqtt.responseToFloat(payload, len);
-    logger.println("F1 Stage 1 on time set to: " + String(stage1_params.fanOnTime) + " MINS");
+    char buffer[50];
+    sprintf(buffer, "F1 Stage 1 on time set to: %.1f MINS", stage1_params.fanOnTime);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
   if (mqtt.isTopicEqual(topic, sub_f1_st1_offtime)) {
     stage1_params.fanOffTime = mqtt.responseToFloat(payload, len);
-    logger.println("F1 Stage 1 off time set to: " + String(stage1_params.fanOffTime) + " MINS");
+    char buffer[50];
+    sprintf(buffer, "F1 Stage 1 off time set to: %.1f MINS", stage1_params.fanOffTime);
+    logger.println(buffer);
+    update_default_parameters = true;
+  }
+
+  if (mqtt.isTopicEqual(topic, sub_f1_rev_st1_ontime)) {
+    stage1_params.fanRevONTime = mqtt.responseToFloat(payload, len);
+    char buffer[60];
+    sprintf(buffer, "F1 Stage 1 reverse on time set to: %.1f MINS", stage1_params.fanRevONTime);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
   // F1 and S1 STAGE 2 on/off time
   if (mqtt.isTopicEqual(topic, sub_f1_st2_ontime)) {
     stage2_params.fanOnTime = mqtt.responseToFloat(payload, len);
-    logger.println("F1 Stage 2 on time set to: " + String(stage2_params.fanOnTime) + " MINS");
+    char buffer[50];
+    sprintf(buffer, "F1 Stage 2 on time set to: %.1f MINS", stage2_params.fanOnTime);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
   if (mqtt.isTopicEqual(topic, sub_f1_st2_offtime)) {
     stage2_params.fanOffTime  = mqtt.responseToFloat(payload, len);
-    logger.println("F1 Stage 2 off time set to: " + String(stage2_params.fanOffTime ) + " MINS");
+    char buffer[50];
+    sprintf(buffer, "F1 Stage 2 off time set to: %.1f MINS", stage2_params.fanOffTime);
+    logger.println(buffer);
+    update_default_parameters = true;
+  }
+
+  if (mqtt.isTopicEqual(topic, sub_f1_rev_st2_ontime)) {
+    stage2_params.fanRevONTime = mqtt.responseToFloat(payload, len);
+    char buffer[60];
+    sprintf(buffer, "F1 Stage 2 reverse on time set to: %.1f MINS", stage2_params.fanRevONTime);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
   if (mqtt.isTopicEqual(topic, sub_s1_st2_ontime)) {
     stage2_params.sprinklerOnTime = mqtt.responseToFloat(payload, len);
-    logger.println("S1 Stage 2 on time set to: " + String(stage2_params.sprinklerOnTime) + " MINS");
+    char buffer[50];
+    sprintf(buffer, "S1 Stage 2 on time set to: %.1f MINS", stage2_params.sprinklerOnTime);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
   if (mqtt.isTopicEqual(topic, sub_s1_st2_offtime)) {
     stage2_params.sprinklerOffTime = mqtt.responseToFloat(payload, len);
-    logger.println("S1 Stage 2 off time set to: " + String(stage2_params.sprinklerOffTime) + " MINS");
+    char buffer[50];
+    sprintf(buffer, "S1 Stage 2 off time set to: %.1f MINS", stage2_params.sprinklerOffTime);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
   // F1 and S1 STAGE 3 on/off time
   if (mqtt.isTopicEqual(topic, sub_f1_st3_ontime)) {
     stage3_params.fanOnTime = mqtt.responseToFloat(payload, len);
-    logger.println("F1 Stage 3 on time set to: " + String(stage3_params.fanOnTime) + " MINS");
+    char buffer[50];
+    sprintf(buffer, "F1 Stage 3 on time set to: %.1f MINS", stage3_params.fanOnTime);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
   if (mqtt.isTopicEqual(topic, sub_f1_st3_offtime)) {
     stage3_params.fanOffTime = mqtt.responseToFloat(payload, len);
-    logger.println("F1 Stage 3 off time set to: " + String(stage3_params.fanOffTime) + " MINS");
+    char buffer[50];
+    sprintf(buffer, "F1 Stage 3 off time set to: %.1f MINS", stage3_params.fanOffTime);
+    logger.println(buffer);
+    update_default_parameters = true;
+  }
+
+  if (mqtt.isTopicEqual(topic, sub_f1_rev_st3_ontime)) {
+    stage3_params.fanRevONTime = mqtt.responseToFloat(payload, len);
+    char buffer[60];
+    sprintf(buffer, "F1 Stage 3 reverse on time set to: %.1f MINS", stage3_params.fanRevONTime);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
   if (mqtt.isTopicEqual(topic, sub_s1_st3_ontime)) {
     stage3_params.sprinklerOnTime = mqtt.responseToFloat(payload, len);
-    logger.println("S1 Stage 3 on time set to: " + String(stage3_params.sprinklerOnTime) + " MINS");
+    char buffer[50];
+    sprintf(buffer, "S1 Stage 3 on time set to: %.1f MINS", stage3_params.sprinklerOnTime);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
   if (mqtt.isTopicEqual(topic, sub_s1_st3_offtime)) {
     stage3_params.sprinklerOffTime = mqtt.responseToFloat(payload, len);
-    logger.println("S1 Stage 3 off time set to: " + String(stage3_params.sprinklerOffTime) + " MINS");
+    char buffer[50];
+    sprintf(buffer, "S1 Stage 3 off time set to: %.1f MINS", stage3_params.sprinklerOffTime);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
@@ -652,57 +749,89 @@ void callback(char *topic, byte *payload, unsigned int len) {
   if (mqtt.isTopicEqual(topic, sub_A)) {
     room.A = mqtt.responseToFloat(payload, len);
     // room.A = atoi((char *)payload);
-    logger.println("A set to: " + String(room.A));
+    char buffer[40];
+    sprintf(buffer, "A set to: %.4f", room.A);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
   if (mqtt.isTopicEqual(topic, sub_B)) {
     room.B = mqtt.responseToFloat(payload, len);
-    logger.println("B set to: " + String(room.B));
+    char buffer[40];
+    sprintf(buffer, "B set to: %.4f", room.B);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
   // PID update
   if (mqtt.isTopicEqual(topic, sub_P)) {
     Kp = mqtt.responseToFloat(payload, len);
-    logger.println("P set to: " + String(Kp));
+    char buffer[40];
+    sprintf(buffer, "P set to: %.4f", Kp);
+    logger.println(buffer);
     kp_has_changed = 1;
   }
 
   if (mqtt.isTopicEqual(topic, sub_I)) {
     Ki = mqtt.responseToFloat(payload, len);
-    logger.println("I set to: " + String(Ki));
+    char buffer[40];
+    sprintf(buffer, "I set to: %.4f", Ki);
+    logger.println(buffer);
     ki_has_changed = 1;
   }
 
   if (mqtt.isTopicEqual(topic, sub_D)) {
     Kd = mqtt.responseToFloat(payload, len);
-    logger.println("D set to: " + String(Kd));
+    char buffer[40];
+    sprintf(buffer, "D set to: %.4f", Kd);
+    logger.println(buffer);
     kd_has_changed = 1;
   }
 
   if (kp_has_changed == 1 && ki_has_changed == 1 && kd_has_changed == 1) {
     air_in_feed_PID.SetTunings(Kp, Ki, Kd);
-    logger.println("New PID parameter updated");
+    logger.println(F("New PID parameter updated"));
     kp_has_changed = ki_has_changed = kd_has_changed = 0;
   }
 
-  if (mqtt.isTopicEqual(topic, sub_coefPID)) {
-    coef_pid = mqtt.responseToInt(payload, len);
-    logger.print("coef PID : " + String(coef_pid));
+  // if (mqtt.isTopicEqual(topic, sub_coefPID)) {
+  //   const uint8_t value = mqtt.responseToInt(payload, len);
+  //   room.coef_pid_fwd = value;
+  //   room.coef_pid_rev = value;
+  //   char buffer[40];
+  //   sprintf(buffer, "coef PID (legacy) : %d", value);
+  //   logger.print(buffer);
+  // }
+
+  if (mqtt.isTopicEqual(topic, sub_coefPIDFwd)) {
+    room.coef_pid_fwd = mqtt.responseToInt(payload, len);
+    char buffer[40];
+    sprintf(buffer, "coef PID forward : %d", room.coef_pid_fwd);
+    logger.print(buffer);
+  }
+
+  if (mqtt.isTopicEqual(topic, sub_coefPIDRev)) {
+    room.coef_pid_rev = mqtt.responseToInt(payload, len);
+    char buffer[40];
+    sprintf(buffer, "coef PID reverse : %d", room.coef_pid_rev);
+    logger.print(buffer);
   }
 
   // Target temperature Ts & Tc update
   if (mqtt.isTopicEqual(topic, sub_ts_set)) {
     temp_set.ts = mqtt.responseToFloat(payload, len);
-    logger.println("Ts Condition set to: " + String(temp_set.ts));
+    char buffer[50];
+    sprintf(buffer, "Ts Condition set to: %.2f", temp_set.ts);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
   if (mqtt.isTopicEqual(topic, sub_tc_set)) {
     temp_set.tc = mqtt.responseToFloat(payload, len);
     // Tc_cond = N_tset->N_tc_set;
-    logger.println("Tc Condition set to: " + String(temp_set.tc));
+    char buffer[50];
+    sprintf(buffer, "Tc Condition set to: %.2f", temp_set.tc);
+    logger.println(buffer);
     update_default_parameters = true;
   }
 
@@ -744,14 +873,8 @@ void stopRoutine() {
   stage_2.destroy();
   stage_3.destroy();
 
-  fan_1_timer = 0UL;               // fan F1 timing
-  pid_computing_timer = 0UL;    // PID computing timing
-  fan_1_stg_2_timmer = 0UL;        // F1 stage 2 timing
-  fan_2_stg_2_timmer = 0UL;        // F1 stage 2 timing
-  fan_1_stg_3_timer = 0UL;         // F1 stage 3 timing
-  sprinkler_1_stg_1_timer = 0UL;         // S1 stage 2 timing
-  sprinkler_1_stg_2_timer = 0UL;         // S1 stage 2 timing
-  sprinkler_1_stg_3_timer = 0UL;         // S1 stage 3 timing
+  // Reset all timers using memset for efficiency
+  memset(&timers, 0, sizeof(SystemTimers));
 
   logger.println("Stage 0 Status Send packet ");
 }
@@ -766,7 +889,8 @@ bool isValidTemperature(float temp, float minTemp, float maxTemp, const String& 
 void updateTemperature() {
   float ta_raw = controller.readTempFrom(TA_AI);
   float tc_raw = controller.readTempFrom(TC_AI);
-  float ts_raw = controller.isTsContactLess() ? controller.getIRTemp() : controller.readTempFrom(TS_AI);
+  const bool use_ir_ts = controller.isTsContactLess() && controller.hasIRSensor();
+  float ts_raw = use_ir_ts ? controller.getIRTemp() : controller.readTempFrom(TS_AI);
   
   
   TA = isValidTemperature(ta_raw, TA_MIN, TA_MAX, "TA") ? ta_raw : TA_DEF;
@@ -777,8 +901,8 @@ void updateTemperature() {
 }
 
 void sendTemperaturaAlert(float temp, String sensor){
-  const String msg = "{\"temp\":" + String(temp) + ", \"sensor\":" + sensor + "}";
-  mqtt.publishData(SPOILED_SENSOR, msg);
+  // const String msg = "{\"temp\":" + String(temp) + ", \"sensor\":" + sensor + "}";
+  // mqtt.publishData(SPOILED_SENSOR, msg);
 }
 
 void setStage(SystemState stage) {
@@ -824,18 +948,22 @@ void getTempAvg() {
   sensorTc.addValue(TC_F);
   sensorTa.addValue(TA_F);
 
+  sensorTsPT100.addValue(controller.readTempFrom(TS_AI));
+
   // mqtt.publishData(AVG_TS_TOPIC, temp_data.avg_ts);
   // mqtt.publishData(AVG_TC_TOPIC, temp_data.avg_tc);
   // mqtt.publishData(AVG_TA_TOPIC, temp_data.avg_ta);
 }
 
 void publishPID(){
-  if (hasIntervalPassed(stg_2_pid_timer, TIME_ACQ_DELAY + 1)) {
+  if (hasIntervalPassed(timers.stage2.pid_publish, TIME_ACQ_DELAY + 1)) {
     // logger.println("Coef Output Actual Output is " + String(coef_output));
     const float output_float = float(coef_output);
     pid_output = ((output_float - 0) / (255 - 0)) * (100 - 0) + 0;
 
-    publishStateChange(PID_OUTPUT, pid_output,"PID Output /100 is " + String(pid_output));
+    char buffer[50];
+    sprintf(buffer, "PID Output /100 is %.2f", pid_output);
+    publishStateChange(PID_OUTPUT, pid_output, buffer);
   }
 }
 
@@ -849,11 +977,17 @@ void publishTemperatures() {
   temp_data.avg_tc = sensorTc.getAverage();
   temp_data.avg_ta = sensorTa.getAverage();
 
+  const float ts_pt100 = sensorTsPT100.getAverage();
 
   mqtt.publishData(TA_TOPIC, temp_data.ta);
   mqtt.publishData(TS_TOPIC, temp_data.ts);
   mqtt.publishData(TC_TOPIC, temp_data.tc);
   mqtt.publishData(TI_TOPIC, temp_data.ti);
+  mqtt.publishData(TS_PT100_TOPIC, ts_pt100);
+  if (controller.hasIRSensor()) {
+    const float ts_ir_mlx = controller.getIRTemp();
+    mqtt.publishData(TS_IR_MLX_TOPIC, ts_ir_mlx);
+  }
 
   mqtt.publishData(AVG_TA_TOPIC, temp_data.avg_ta);
   mqtt.publishData(AVG_TS_TOPIC, temp_data.avg_ts);
@@ -950,7 +1084,9 @@ void asyncLoopSprinkler(uint32_t &timer, uint32_t offTime, uint32_t onTime) {
   if (!isSprinklerOn && hasIntervalPassed(timer, offTime, true)) {
     // Es tiempo de encender el aspersor
     controller.writeDigitalOutput(VALVE_IO, HIGH);
-    logger.println("Sprinkler ON at: " + String(millis()));
+    char buffer[40];
+    sprintf(buffer, "Sprinkler ON at: %lu", millis());
+    logger.println(buffer);
     
     publishStateChange(m_S1, true, "Stage 2 S1 Start published "); 
   } 
@@ -958,7 +1094,9 @@ void asyncLoopSprinkler(uint32_t &timer, uint32_t offTime, uint32_t onTime) {
   else if (isSprinklerOn && hasIntervalPassed(timer, onTime, true)) {
     // Es tiempo de apagar el aspersor
     controller.writeDigitalOutput(VALVE_IO, LOW);
-    logger.println("Sprinkler OFF at: " + String(millis()));
+    char buffer[40];
+    sprintf(buffer, "Sprinkler OFF at: %lu", millis());
+    logger.println(buffer);
 
     publishStateChange(m_S1, false, "Stage 2 S1 Stop published ");
   }

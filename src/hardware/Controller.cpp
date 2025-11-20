@@ -118,18 +118,33 @@ void Controller::setUpRTC() {
 
 void Controller::setUpIRTc() {
   DEBUG("Inicializando MLX90640...");
+  ir_sensor_ready = false;
+  ir_sensor_attempted = true;
 
-  while (!mlx.begin(MLX90640_I2CADDR_DEFAULT, &rtc_i2c)) {
-    DEBUG("¡Error al iniciar el sensor MLX90640!");
-    delay(1000);
+  const uint8_t max_attempts = 5;
+  for (uint8_t attempt = 1; attempt <= max_attempts; attempt++) {
+    if (mlx.begin(MLX90640_I2CADDR_DEFAULT, &rtc_i2c)) {
+      DEBUG("Sensor MLX90640 iniciado correctamente");
+      mlx.setRefreshRate(MLX90640_4_HZ);
+      ir_sensor_ready = true;
+      return;
+    }
+
+    char buffer[70];
+    snprintf(buffer, sizeof(buffer), "Error al iniciar MLX90640 (intento %u/%u)", attempt, max_attempts);
+    DEBUG(buffer);
+    delay(500);
   }
 
-  DEBUG("Sensor MLX90640 iniciado correctamente");
-  
-  mlx.setRefreshRate(MLX90640_4_HZ);
+  DEBUG("MLX90640 no disponible, se omitirán las lecturas IR");
+  ERROR(IR_NOT_FOUND);
 }
 
 float Controller::getIRTemp() {
+  if (!ir_sensor_ready) {
+    return -1;
+  }
+
   float pixelTemps[32 * 24]; // Array temporal para almacenar las temperaturas de todos los píxeles
   float bottomTemps[ARRAY_SIZE]; // Inicializa con valores infinitos
 
@@ -215,9 +230,17 @@ bool Controller::isTsContactLess() {
   return ir_ts;
 }
 
+bool Controller::hasIRSensor() {
+  if (!ir_sensor_ready && !ir_sensor_attempted) {
+    setUpIRTc();
+  }
+  return ir_sensor_ready;
+}
+
 void Controller::setTsContactLess(bool value) {
   updateConfigJson("IR_TS", value);
   ir_ts = value;
+  if (ir_ts && !ir_sensor_ready) setUpIRTc();
 }
 
 bool Controller::isLoraTc() {
@@ -337,20 +360,26 @@ void Controller::updateDefaultParameters(stage_parameters &stage1_params, stage_
 
   // Update the values
   doc["stage1"]["f1Ontime"] = stage1_params.fanOnTime;
+  doc["stage1"]["f1RevONTime"] = stage1_params.fanRevONTime;
   doc["stage1"]["f1Offtime"] = stage1_params.fanOffTime;
 
   doc["stage2"]["f1Ontime"] = stage2_params.fanOnTime;
+  doc["stage2"]["f1RevONTime"] = stage2_params.fanRevONTime;
   doc["stage2"]["f1Offtime"] = stage2_params.fanOffTime;
+
   doc["stage2"]["s1Ontime"] = stage2_params.sprinklerOnTime;
   doc["stage2"]["s1Offtime"] = stage2_params.sprinklerOffTime;
 
   doc["stage3"]["f1Ontime"] = stage3_params.fanOnTime;
+  doc["stage3"]["f1RevONTime"] = stage3_params.fanRevONTime;
   doc["stage3"]["f1Offtime"] = stage3_params.fanOffTime;
   doc["stage3"]["s1Ontime"] = stage3_params.sprinklerOnTime;
   doc["stage3"]["s1Offtime"] = stage3_params.sprinklerOffTime;
 
   doc["setPoint"]["A"] = room.A;
   doc["setPoint"]["B"] = room.B;
+  doc["setPoint"]["coef_pid_fwd"] = room.coef_pid_fwd;
+  doc["setPoint"]["coef_pid_rev"] = room.coef_pid_rev;
   
   doc["tset"]["tsSet"] = N_tset.ts;
   doc["tset"]["tcSet"] = N_tset.tc;
@@ -458,16 +487,19 @@ void Controller::setUpDefaultParameters(stage_parameters &stage1_params, stage_p
   }
 
   stage1_params.fanOnTime = doc["stage1"]["f1Ontime"];
+  stage1_params.fanRevONTime = doc["stage1"]["f1RevONtime"];
   stage1_params.fanOffTime = doc["stage1"]["f1Offtime"];
   stage1_params.sprinklerOnTime = doc["stage1"]["s1Ontime"];
   stage1_params.sprinklerOffTime = doc["stage1"]["s1Offtime"];
 
   stage2_params.fanOnTime = doc["stage2"]["f1Ontime"];
+  stage2_params.fanRevONTime = doc["stage2"]["f1RevONtime"];
   stage2_params.fanOffTime = doc["stage2"]["f1Offtime"];
   stage2_params.sprinklerOnTime = doc["stage2"]["s1Ontime"];
   stage2_params.sprinklerOffTime = doc["stage2"]["s1Offtime"];
 
   stage3_params.fanOnTime = doc["stage3"]["f1Ontime"];
+  stage3_params.fanRevONTime = doc["stage3"]["f1RevONtime"];
   stage3_params.fanOffTime = doc["stage3"]["f1Offtime"];
   stage3_params.sprinklerOnTime = doc["stage3"]["s1Ontime"];
   stage3_params.sprinklerOffTime = doc["stage3"]["s1Offtime"];
@@ -478,37 +510,15 @@ void Controller::setUpDefaultParameters(stage_parameters &stage1_params, stage_p
   
 
   room.A = doc["setPoint"]["A"];
-  room.B = doc["setPoint"]["B"];; 
+  room.B = doc["setPoint"]["B"];
+  room.coef_pid_fwd = doc["setPoint"]["coef_pid_fwd"] | 100;
+  room.coef_pid_rev = doc["setPoint"]["coef_pid_rev"] | 100;
 
   N_tset.ts = doc["tset"]["tsSet"];
   N_tset.tc = doc["tset"]["tcSet"];
 
   // // log all data
-  // DEBUG("Stage 1 parameters: ");
-  // DEBUG("Fan on time: " + String(stage1_params.fanOnTime));
-  // DEBUG("Fan off time: " + String(stage1_params.fanOffTime));
-  // DEBUG("Sprinkler on time: " + String(stage1_params.sprinklerOnTime));
-  // DEBUG("Sprinkler off time: " + String(stage1_params.sprinklerOffTime));
 
-  // DEBUG("Stage 2 parameters: ");
-  // DEBUG("Fan on time: " + String(stage2_params.fanOnTime));
-  // DEBUG("Fan off time: " + String(stage2_params.fanOffTime));
-  // DEBUG("Sprinkler on time: " + String(stage2_params.sprinklerOnTime));
-  // DEBUG("Sprinkler off time: " + String(stage2_params.sprinklerOffTime));
-
-  // DEBUG("Stage 3 parameters: ");
-  // DEBUG("Fan on time: " + String(stage3_params.fanOnTime));
-  // DEBUG("Fan off time: " + String(stage3_params.fanOffTime));
-  // DEBUG("Sprinkler on time: " + String(stage3_params.sprinklerOnTime));
-  // DEBUG("Sprinkler off time: " + String(stage3_params.sprinklerOffTime));
-
-  // DEBUG("Room parameters: ");
-  // DEBUG("A: " + String(room.A));
-  // DEBUG("B: " + String(room.B));
-
-  // DEBUG("Tset parameters: ");
-  // DEBUG("Ts: " + String(N_tset.ts));
-  // DEBUG("Tc: " + String(N_tset.tc));
 
 }
 
