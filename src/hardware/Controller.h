@@ -38,9 +38,6 @@
 #define NO_CONFIG_FILE_TXT "No config file found"
 #define NO_DEFAULT_PARAMS_TXT "No default parameters found"
 
-// #define TIME_ZONE_OFFSET_HRS            (-7)  /* Ensenada, México */
-// #define TIME_ZONE_OFFSET_HRS            (+8)   /* Taiping, Malaysia */
-
 class Controller {
 private:
     const char* ERROR_MESSAGES[NUM_ERRORS] = {
@@ -62,7 +59,9 @@ private:
     bool ir_sensor_ready = false;
     bool ir_sensor_attempted = false;
     Preferences preferences;
+    #ifndef TIME_ZONE_OFFSET_HRS
     int8_t TIME_ZONE_OFFSET_HRS = 0;
+    #endif
 
 
     // Digital pins configuration

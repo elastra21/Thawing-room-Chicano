@@ -53,6 +53,9 @@
 #define MIN_OFFTIME_STAGE2 0.5
 #define MIN_OFFTIME_STAGE3 0.5
 
+// #define TIME_ZONE_OFFSET_HRS            (-7)  /* Ensenada, México */
+#define TIME_ZONE_OFFSET_HRS            (+8)   /* Taiping, Malaysia */
+
 // DeviceAddress ADDRESS_TA = { 0x28, 0x8C, 0x4B, 0xAD, 0x27, 0x19, 0x01, 0xCA }; // Ta
 // // DeviceAddress ADDRESS_TC1 = { 0x28, 0xA7, 0x93, 0x8B, 0x0B, 0x00, 0x00, 0xB2 }; // Ta
 // DeviceAddress ADDRESS_TS = { 0x28, 0x78, 0x98, 0x8B, 0x0B, 0x00, 0x00, 0x22 }; // Ts

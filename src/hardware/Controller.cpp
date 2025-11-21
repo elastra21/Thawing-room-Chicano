@@ -447,7 +447,9 @@ void Controller::runConfigFile(char* ssid, char* password, char* hostname, char*
   if (doc.containsKey("MQTT_ID")) strlcpy(mqtt_id, doc["MQTT_ID"], MQTT_ID_SIZE);
   if (doc.containsKey("MQTT_PASSWORD")) strlcpy(mqtt_password, doc["MQTT_PASSWORD"], MQTT_PASSWORD_SIZE);
   if(doc.containsKey("IR_TS")) ir_ts = doc["IR_TS"];
-  if(doc.containsKey("TIME_ZONE_OFFSET_HRS")) TIME_ZONE_OFFSET_HRS = doc["TIME_ZONE_OFFSET_HRS"];
+  #ifndef TIME_ZONE_OFFSET_HRS
+    if(doc.containsKey("TIME_ZONE_OFFSET_HRS")) TIME_ZONE_OFFSET_HRS = doc["TIME_ZONE_OFFSET_HRS"];
+  #endif
   DEBUG(("TIME_ZONE_OFFSET_HRS: " + String(TIME_ZONE_OFFSET_HRS)).c_str());
   if(doc.containsKey("LoRa_Tc")) setLoraTc(doc["LoRa_Tc"]);
   if(doc.containsKey("WEB_SERIAL")) logger.setOutput(doc["WEB_SERIAL"]);
